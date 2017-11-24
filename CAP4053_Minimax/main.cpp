@@ -33,27 +33,27 @@ int main() {
 		
 		// Get input choice
 		char choice;
-		std::cout << "Direction [ULDR] > ";
+		std::cout << "Direction [WASD] > ";
 		std::cin >> choice;
 		switch(::toupper(choice)) {
-			case 'U':
+			case 'W':
 				board.shiftTilesUp();
 				break;
 			
-			case 'L':
+			case 'A':
 				board.shiftTilesLeft();
 				break;
 			
-			case 'D':
+			case 'S':
 				board.shiftTilesDown();
 				break;
 			
-			case 'R':
+			case 'D':
 				board.shiftTilesRight();
 				break;
 			
 			default:
-				std::cout << "Invalid input! Enter U, L, D, or R." << std::endl;
+				std::cout << "Invalid input! Enter W, A, S, or D." << std::endl;
 				continue;
 		}
 		
