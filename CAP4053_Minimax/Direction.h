@@ -2,8 +2,8 @@
 //  Direction.h
 //  CAP4053_Minimax
 //
-//  Created by Kevin Colley on 11/19/17.
-//  Copyright © 2017 Kevin Colley. All rights reserved.
+//  Created by kTeam on 11/19/17.
+//  Copyright © 2017 kTeam. All rights reserved.
 //
 
 #ifndef MM_DIRECTION_H
