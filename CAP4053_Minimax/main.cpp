@@ -30,35 +30,40 @@ int main() {
 	while(!board.isGameOver()) {
 		// Display board
 		board.print();
+		std::cout << std::endl;
 		
 		// Get input choice
 		char choice;
 		std::cout << "Direction [WASD] > ";
 		std::cin >> choice;
+		
+		bool didMove = false;
 		switch(::toupper(choice)) {
 			case 'W':
-				board.shiftTilesUp();
+				didMove = board.shiftTilesUp();
 				break;
 			
 			case 'A':
-				board.shiftTilesLeft();
+				didMove = board.shiftTilesLeft();
 				break;
 			
 			case 'S':
-				board.shiftTilesDown();
+				didMove = board.shiftTilesDown();
 				break;
 			
 			case 'D':
-				board.shiftTilesRight();
+				didMove = board.shiftTilesRight();
 				break;
 			
 			default:
 				std::cout << "Invalid input! Enter W, A, S, or D." << std::endl;
-				continue;
+				break;
 		}
 		
-		// Place next random value
-		board.placeRandom();
+		if(didMove) {
+			// Place next random value
+			board.placeRandom();
+		}
 	}
 	
 	// Loser

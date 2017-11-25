@@ -12,24 +12,26 @@
 #include <cstdint>
 #include "Direction.h"
 
-#define TILE_EMPTY  0
-#define TILE_2      1
-#define TILE_4      2
-#define TILE_8      3
-#define TILE_16     4
-#define TILE_32     5
-#define TILE_64     6
-#define TILE_128    7
-#define TILE_256    8
-#define TILE_512    9
-#define TILE_1024  10
-#define TILE_2048  11
-#define TILE_4096  12
-#define TILE_8192  13
-#define TILE_16384 14
-#define TILE_32768 15
-
 typedef uint64_t CompressedGrid;
+#define GRID_EMPTY  ((CompressedGrid)0)
+
+typedef uint_fast8_t Tile;
+#define TILE_EMPTY  ((Tile)0)
+#define TILE_2      ((Tile)1)
+#define TILE_4      ((Tile)2)
+#define TILE_8      ((Tile)3)
+#define TILE_16     ((Tile)4)
+#define TILE_32     ((Tile)5)
+#define TILE_64     ((Tile)6)
+#define TILE_128    ((Tile)7)
+#define TILE_256    ((Tile)8)
+#define TILE_512    ((Tile)9)
+#define TILE_1024   ((Tile)10)
+#define TILE_2048   ((Tile)11)
+#define TILE_4096   ((Tile)12)
+#define TILE_8192   ((Tile)13)
+#define TILE_16384  ((Tile)14)
+#define TILE_32768  ((Tile)15)
 
 
 class Board {
@@ -39,21 +41,16 @@ public:
 	void placeTile(unsigned tile, unsigned row, unsigned col);
 	void placeRandom();
 	
-	static CompressedGrid shiftingTilesUp(CompressedGrid grid);
-	static CompressedGrid shiftingTilesDown(CompressedGrid grid);
-	static CompressedGrid shiftingTilesLeft(CompressedGrid grid);
-	static CompressedGrid shiftingTilesRight(CompressedGrid grid);
-	
-	void shiftTiles(Direction dir);
-	void shiftTilesUp();
-	void shiftTilesDown();
-	void shiftTilesLeft();
-	void shiftTilesRight();
+	bool shiftTiles(Direction dir);
+	bool shiftTilesUp();
+	bool shiftTilesDown();
+	bool shiftTilesLeft();
+	bool shiftTilesRight();
 	
 	bool isGameOver() const;
 	void print() const;
 
-private:
+protected:
 	CompressedGrid mCompressedGrid;
 };
 
