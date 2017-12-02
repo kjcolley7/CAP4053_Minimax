@@ -10,27 +10,8 @@
 #include <cstdio>
 #include <cstdlib>
 #include <iostream>
+#include "BoardPrivate.h"
 
-
-/*
- * In the compressed grid format, each tile is stored in a nybble in row-major format. That
- * means the entire 4x4 grid can be stored in a single 8-byte uint64_t.
- */
-#define TILE_BITS 4
-#define TILE_MASK ((CompressedGrid)((1 << TILE_BITS) - 1))
-
-#define GET_SHIFT_ROW(shift) (((shift) >> 4) & 0x3)
-#define GET_SHIFT_COL(shift) (((shift) >> 2) & 0x3)
-#define MAKE_ROW_SHIFT(row) (int)((row) << 4)
-#define MAKE_COL_SHIFT(col) (int)((col) << 2)
-#define MAKE_SHIFT(row, col) (MAKE_ROW_SHIFT(row) | MAKE_COL_SHIFT(col))
-#define MAKE_UP(shift) (__typeof__(shift))((shift) - MAKE_ROW_SHIFT(1))
-#define MAKE_DOWN(shift) (__typeof__(shift))((shift) + MAKE_ROW_SHIFT(1))
-#define MAKE_LEFT(shift) (__typeof__(shift))((shift) - MAKE_COL_SHIFT(1))
-#define MAKE_RIGHT(shift) (__typeof__(shift))((shift) + MAKE_COL_SHIFT(1))
-#define EXTRACT_TILE(grid, shift) ((Tile)(((grid) >> (shift)) & TILE_MASK))
-#define GET_TILE(grid, row, col) EXTRACT_TILE(grid, MAKE_SHIFT(row, col))
-#define TILE_VALUE(tile) (1 << (uint_fast32_t)(tile))
 
 static inline CompressedGrid applyingTile(CompressedGrid grid, int shift, CompressedGrid tile) {
 	return ((grid & ~(TILE_MASK << shift)) | (tile << shift));
@@ -40,11 +21,37 @@ static inline CompressedGrid settingTile(CompressedGrid grid, unsigned row, unsi
 	return applyingTile(grid, MAKE_SHIFT(row, col), tile);
 }
 
+
+/*
+ * These shifting<Row/Column><Direction> functions all do pretty much the same thing. They use dst,
+ * which is a shift value (grid location), to decide where the tiles should be shifted to. Then, delta
+ * is a shift value that decides how far the tiles are shifting, whether it's by one, two, or three cells.
+ * Take for example the following grid:
+ *
+ *   2 | 4 | 2 | 8
+ *  ---+---+---+---
+ *     | . |   |
+ *  ---+---+---+---
+ *     | 4 |   |
+ *  ---+---+---+---
+ *     | 4 |   |
+ *
+ * Calling shiftingColumnUp(grid, MAKE_SHIFT(1, 1)) would produce the following result:
+ *
+ *   2 | 4 | 2 | 8
+ *  ---+---+---+---
+ *     | 4 |   |
+ *  ---+---+---+---
+ *     | 4 |   |
+ *  ---+---+---+---
+ *     |   |   |
+ *
+ */
 static inline CompressedGrid shiftingColumnUp(CompressedGrid grid, int dst, int delta = MAKE_ROW_SHIFT(1)) {
 	for(int src = dst + delta;
 		GET_SHIFT_ROW(dst) < GET_SHIFT_ROW(src);
 		dst = MAKE_DOWN(dst), src = dst + delta
-		) {
+	) {
 		grid = applyingTile(grid, dst, EXTRACT_TILE(grid, src));
 	}
 	for(; GET_SHIFT_ROW(dst) != 0; dst = MAKE_DOWN(dst)) {
@@ -57,7 +64,7 @@ static inline CompressedGrid shiftingColumnDown(CompressedGrid grid, int dst, in
 	for(int src = dst - delta;
 		GET_SHIFT_ROW(src) < GET_SHIFT_ROW(dst);
 		dst = MAKE_UP(dst), src = dst - delta
-		) {
+	) {
 		grid = applyingTile(grid, dst, EXTRACT_TILE(grid, src));
 	}
 	for(; GET_SHIFT_ROW(dst) != 3; dst = MAKE_UP(dst)) {
@@ -70,7 +77,7 @@ static inline CompressedGrid shiftingRowLeft(CompressedGrid grid, int dst, int d
 	for(int src = dst + delta;
 		GET_SHIFT_COL(dst) < GET_SHIFT_COL(src);
 		dst = MAKE_RIGHT(dst), src = dst + delta
-		) {
+	) {
 		grid = applyingTile(grid, dst, EXTRACT_TILE(grid, src));
 	}
 	for(; GET_SHIFT_COL(dst) != 0; dst = MAKE_RIGHT(dst)) {
@@ -83,7 +90,7 @@ static inline CompressedGrid shiftingRowRight(CompressedGrid grid, int dst, int 
 	for(int src = dst - delta;
 		GET_SHIFT_COL(src) < GET_SHIFT_COL(dst);
 		dst = MAKE_LEFT(dst), src = dst - delta
-		) {
+	) {
 		grid = applyingTile(grid, dst, EXTRACT_TILE(grid, src));
 	}
 	for(; GET_SHIFT_COL(dst) != 3; dst = MAKE_LEFT(dst)) {
@@ -304,7 +311,7 @@ Board::Board()
 : mCompressedGrid(0) { }
 
 
-void Board::placeTile(unsigned tile, unsigned row, unsigned col) {
+void Board::placeTile(Tile tile, unsigned row, unsigned col) {
 	mCompressedGrid = settingTile(mCompressedGrid, row, col, tile);
 }
 
@@ -322,11 +329,11 @@ void Board::placeRandom() {
 		}
 	}
 	
-	// Generate random tile value and pick which hole to place it in
-	unsigned rnd = (unsigned)rand();
-	unsigned tile = 1 << (rnd & 0x1);
-	rnd >>= 1;
-	int hole = holeShifts[rnd % holeCount];
+	// Generate random tile value (10% chance of spawning a 4)...
+	unsigned tile = 1 << ((rand() % 10 == 0) & 0x1);
+	
+	// ...and pick which hole to place it in with even distribution.
+	int hole = holeShifts[rand() % holeCount];
 	
 	// Set new tile and store back in this class
 	mCompressedGrid = applyingTile(grid, hole, tile);
@@ -375,25 +382,21 @@ bool Board::shiftTilesRight() {
 
 
 bool Board::isGameOver() const {
-	Board copy{*this};
+	CompressedGrid grid = mCompressedGrid;
 	
-	copy.shiftTilesUp();
-	if(copy.mCompressedGrid != mCompressedGrid) {
+	if(shiftingTilesUp(grid) != grid) {
 		return false;
 	}
 	
-	copy.shiftTilesDown();
-	if(copy.mCompressedGrid != mCompressedGrid) {
+	if(shiftingTilesDown(grid) != grid) {
 		return false;
 	}
 	
-	copy.shiftTilesLeft();
-	if(copy.mCompressedGrid != mCompressedGrid) {
+	if(shiftingTilesLeft(grid) != grid) {
 		return false;
 	}
 	
-	copy.shiftTilesRight();
-	if(copy.mCompressedGrid != mCompressedGrid) {
+	if(shiftingTilesRight(grid) != grid) {
 		return false;
 	}
 	
@@ -403,7 +406,7 @@ bool Board::isGameOver() const {
 
 void Board::print() const {
 	// Operate on a local copy of the grid, hopefully in a register
-	uint64_t grid = mCompressedGrid;
+	CompressedGrid grid = mCompressedGrid;
 	
 	/*
 	 *         |       |       |

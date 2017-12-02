@@ -38,7 +38,7 @@ class Board {
 public:
 	Board();
 	
-	void placeTile(unsigned tile, unsigned row, unsigned col);
+	void placeTile(Tile tile, unsigned row, unsigned col);
 	void placeRandom();
 	
 	bool shiftTiles(Direction dir);
@@ -49,6 +49,8 @@ public:
 	
 	bool isGameOver() const;
 	void print() const;
+	
+	int estimateScore() const;
 
 protected:
 	CompressedGrid mCompressedGrid;

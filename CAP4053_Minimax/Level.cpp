@@ -15,14 +15,23 @@
 
 
 Level::Level(sf::RenderTarget& target)
-: mCanvas(target), mTextures(std::make_shared<TextureAtlas>(resourcePath() + "tiles.pack")) {
+: mCanvas(target), mTextures(std::make_shared<TextureAtlas>(resourcePath() + "sprites.pack")) {
 	// Load font
-	if(!mFont.loadFromFile(resourcePath() + "Roboto-Black.ttf")) {
+	mFont = std::make_shared<sf::Font>();
+	if(!mFont->loadFromFile(resourcePath() + "Roboto-Black.ttf")) {
 		std::cerr << "Failed to load font file" << std::endl;
 		exit(EXIT_FAILURE);
 	}
 	
-	//go do the game thing now plz
+	// Create the board and place first two random tiles
+	mBoard = std::make_shared<DrawableBoard>(mFont, mTextures);
+	mBoard->placeRandom();
+	mBoard->placeRandom();
+	
+	// Move the board into position (centered at the bottom of the window)
+	float distanceToEdge = (600 - mBoard->kBoardWidth) / 2.0f;
+	float halfBoard = mBoard->kBoardWidth / 2.0f;
+	mBoard->setCenter({600 / 2.0f, 800 - distanceToEdge - halfBoard});
 }
 
 void Level::update(float deltaTime) {
@@ -30,45 +39,51 @@ void Level::update(float deltaTime) {
 }
 
 void Level::draw(float deltaTime) {
-	//TODO: Draw!
+	mBoard->draw(mCanvas);
 }
 
 void Level::keyPressed(sf::Keyboard::Key key) {
+	bool didMove = false;
 	switch(key) {
 		case sf::Keyboard::Up:
 		case sf::Keyboard::W:
-			mBoard.shiftTilesUp();
+		case sf::Keyboard::K:
+			didMove = mBoard->shiftTilesUp();
 			break;
 		
 		case sf::Keyboard::Left:
 		case sf::Keyboard::A:
-			mBoard.shiftTilesLeft();
+		case sf::Keyboard::H:
+			didMove = mBoard->shiftTilesLeft();
 			break;
 		
 		case sf::Keyboard::Down:
 		case sf::Keyboard::S:
-			mBoard.shiftTilesDown();
+		case sf::Keyboard::J:
+			didMove = mBoard->shiftTilesDown();
 			break;
 		
 		case sf::Keyboard::Right:
 		case sf::Keyboard::D:
-			mBoard.shiftTilesRight();
+		case sf::Keyboard::L:
+			didMove = mBoard->shiftTilesRight();
 			break;
 		
 		default:
 			break;
+	}
+	
+	if(didMove) {
+		mBoard->placeRandom();
+		if(mBoard->isGameOver()) {
+			// TODO: Display as text in the game window
+			std::cout << "Game over!" << std::endl;
+		}
 	}
 }
 
 void Level::keyReleased(sf::Keyboard::Key key) {
-	switch(key) {
-		case sf::Keyboard::Down:
-			//TODO: Unduck!
-			break;
-		
-		default:
-			break;
-	}
+	// Nothing to do
 }
 
 void Level::mouseButtonPressed(int x, int y) {

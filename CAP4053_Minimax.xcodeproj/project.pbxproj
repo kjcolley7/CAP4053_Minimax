@@ -7,7 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		0A4EA27A1FBFFFCB008DED9C /* CAP4053_Minimax-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 0A4EA2641FBFFFCA008DED9C /* CAP4053_Minimax-Info.plist */; };
+		0A3C77DC1FCCAF3C0060FBFF /* DrawableBoard.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A3C77DA1FCCAF3C0060FBFF /* DrawableBoard.cpp */; };
 		0A4EA28C1FC226F8008DED9C /* helpers.mm in Sources */ = {isa = PBXBuildFile; fileRef = 0A4EA2841FC226F8008DED9C /* helpers.mm */; };
 		0A4EA28D1FC226F8008DED9C /* Level.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A4EA2851FC226F8008DED9C /* Level.cpp */; };
 		0A4EA28E1FC226F8008DED9C /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A4EA2871FC226F8008DED9C /* main.cpp */; };
@@ -15,9 +15,14 @@
 		0A4EA2901FC226F8008DED9C /* TextureAtlas.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A4EA28A1FC226F8008DED9C /* TextureAtlas.cpp */; };
 		0A4EA2931FC23036008DED9C /* Roboto-Black.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 0A4EA2921FC23035008DED9C /* Roboto-Black.ttf */; };
 		0A4EA2961FC23230008DED9C /* Board.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A4EA2941FC23230008DED9C /* Board.cpp */; };
+		0AB60DDF1FD3222100EC61A0 /* sprites.pack in Resources */ = {isa = PBXBuildFile; fileRef = 0AB60DDD1FD3222100EC61A0 /* sprites.pack */; };
+		0AB60DE01FD3222100EC61A0 /* sprites.png in Resources */ = {isa = PBXBuildFile; fileRef = 0AB60DDE1FD3222100EC61A0 /* sprites.png */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		0A3C77D91FCCAEE60060FBFF /* BoardPrivate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = BoardPrivate.h; sourceTree = "<group>"; };
+		0A3C77DA1FCCAF3C0060FBFF /* DrawableBoard.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = DrawableBoard.cpp; sourceTree = "<group>"; };
+		0A3C77DB1FCCAF3C0060FBFF /* DrawableBoard.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = DrawableBoard.h; sourceTree = "<group>"; };
 		0A4EA2641FBFFFCA008DED9C /* CAP4053_Minimax-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "CAP4053_Minimax-Info.plist"; sourceTree = "<group>"; };
 		0A4EA2831FC226F8008DED9C /* helpers.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = helpers.h; sourceTree = "<group>"; };
 		0A4EA2841FC226F8008DED9C /* helpers.mm */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.objcpp; path = helpers.mm; sourceTree = "<group>"; };
@@ -32,6 +37,8 @@
 		0A4EA2941FC23230008DED9C /* Board.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Board.cpp; sourceTree = "<group>"; };
 		0A4EA2951FC23230008DED9C /* Board.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Board.h; sourceTree = "<group>"; };
 		0A4EA2971FC23296008DED9C /* Direction.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Direction.h; sourceTree = "<group>"; };
+		0AB60DDD1FD3222100EC61A0 /* sprites.pack */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = sprites.pack; sourceTree = "<group>"; };
+		0AB60DDE1FD3222100EC61A0 /* sprites.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = sprites.png; sourceTree = "<group>"; };
 		0ACFF0301F7C3977002EFA7E /* CAP4053_Minimax.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CAP4053_Minimax.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -49,6 +56,8 @@
 		0A4EA2811FC00017008DED9C /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				0AB60DDD1FD3222100EC61A0 /* sprites.pack */,
+				0AB60DDE1FD3222100EC61A0 /* sprites.png */,
 				0A4EA2921FC23035008DED9C /* Roboto-Black.ttf */,
 				0A4EA2641FBFFFCA008DED9C /* CAP4053_Minimax-Info.plist */,
 			);
@@ -63,7 +72,10 @@
 				0A4EA2851FC226F8008DED9C /* Level.cpp */,
 				0A4EA2971FC23296008DED9C /* Direction.h */,
 				0A4EA2951FC23230008DED9C /* Board.h */,
+				0A3C77D91FCCAEE60060FBFF /* BoardPrivate.h */,
 				0A4EA2941FC23230008DED9C /* Board.cpp */,
+				0A3C77DB1FCCAF3C0060FBFF /* DrawableBoard.h */,
+				0A3C77DA1FCCAF3C0060FBFF /* DrawableBoard.cpp */,
 				0A4EA2871FC226F8008DED9C /* main.cpp */,
 				0A4EA2811FC00017008DED9C /* Resources */,
 			);
@@ -157,8 +169,9 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				0A4EA27A1FBFFFCB008DED9C /* CAP4053_Minimax-Info.plist in Resources */,
+				0AB60DDF1FD3222100EC61A0 /* sprites.pack in Resources */,
 				0A4EA2931FC23036008DED9C /* Roboto-Black.ttf in Resources */,
+				0AB60DE01FD3222100EC61A0 /* sprites.png in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -189,6 +202,7 @@
 				0A4EA2901FC226F8008DED9C /* TextureAtlas.cpp in Sources */,
 				0A4EA28D1FC226F8008DED9C /* Level.cpp in Sources */,
 				0A4EA28F1FC226F8008DED9C /* GameEngine.cpp in Sources */,
+				0A3C77DC1FCCAF3C0060FBFF /* DrawableBoard.cpp in Sources */,
 				0A4EA28C1FC226F8008DED9C /* helpers.mm in Sources */,
 				0A4EA28E1FC226F8008DED9C /* main.cpp in Sources */,
 			);

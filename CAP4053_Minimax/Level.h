@@ -14,8 +14,8 @@
 #include <SFML/Graphics.hpp>
 
 class Level;
-#include "TextureAtlas.h"
-#include "Board.h"
+#include "Engine/TextureAtlas.h"
+#include "DrawableBoard.h"
 
 
 /**
@@ -78,8 +78,8 @@ public:
 private:
 	sf::RenderTarget& mCanvas;
 	std::shared_ptr<TextureAtlas> mTextures;
-	sf::Font mFont;
-	Board mBoard;
+	std::shared_ptr<sf::Font> mFont;
+	std::shared_ptr<DrawableBoard> mBoard;
 };
 
 #endif /* MM_LEVEL_H */

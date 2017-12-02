@@ -21,44 +21,44 @@ int GameEngine::run() {
 	
 	while(mWindow.isOpen()) {
 		sf::Event event;
-		mWindow.pollEvent(event);
-		
-		switch(event.type) {
-			case sf::Event::Closed:
-				mWindow.close();
-				break;
-				
-			case sf::Event::KeyPressed:
-				if(event.key.code == sf::Keyboard::Escape) {
+		if(mWindow.pollEvent(event)) {
+			switch(event.type) {
+				case sf::Event::Closed:
 					mWindow.close();
 					break;
-				}
+					
+				case sf::Event::KeyPressed:
+					if(event.key.code == sf::Keyboard::Escape) {
+						mWindow.close();
+						break;
+					}
+					
+					mLevel.keyPressed(event.key.code);
+					break;
 				
-				mLevel.keyPressed(event.key.code);
-				break;
-			
-			case sf::Event::KeyReleased:
-				mLevel.keyReleased(event.key.code);
-				break;
-			
-			case sf::Event::MouseButtonPressed:
-				if(event.mouseButton.button == sf::Mouse::Left) {
-					mLevel.mouseButtonPressed(event.mouseButton.x, event.mouseButton.y);
-				}
-				break;
-			
-			case sf::Event::MouseButtonReleased:
-				if(event.mouseButton.button == sf::Mouse::Left) {
-					mLevel.mouseButtonReleased(event.mouseButton.x, event.mouseButton.y);
-				}
-				break;
-			
-			case sf::Event::MouseMoved:
-				mLevel.mouseMoved(event.mouseMove.x, event.mouseMove.y);
-				break;
+				case sf::Event::KeyReleased:
+					mLevel.keyReleased(event.key.code);
+					break;
 				
-			default:
-				break;
+				case sf::Event::MouseButtonPressed:
+					if(event.mouseButton.button == sf::Mouse::Left) {
+						mLevel.mouseButtonPressed(event.mouseButton.x, event.mouseButton.y);
+					}
+					break;
+				
+				case sf::Event::MouseButtonReleased:
+					if(event.mouseButton.button == sf::Mouse::Left) {
+						mLevel.mouseButtonReleased(event.mouseButton.x, event.mouseButton.y);
+					}
+					break;
+				
+				case sf::Event::MouseMoved:
+					mLevel.mouseMoved(event.mouseMove.x, event.mouseMove.y);
+					break;
+					
+				default:
+					break;
+			}
 		}
 		
 		float deltaTime = timer.restart().asSeconds();
