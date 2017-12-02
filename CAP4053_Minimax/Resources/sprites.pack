@@ -3,7 +3,7 @@ size: 607, 500
 format: RGBA8888
 filter: Linear,Linear
 repeat: none
-Background
+Board
   rotate: false
   xy: 0, 0
   size: 500, 500

@@ -80,6 +80,7 @@ private:
 	std::shared_ptr<TextureAtlas> mTextures;
 	std::shared_ptr<sf::Font> mFont;
 	std::shared_ptr<DrawableBoard> mBoard;
+	sf::Text mTitle;
 };
 
 #endif /* MM_LEVEL_H */

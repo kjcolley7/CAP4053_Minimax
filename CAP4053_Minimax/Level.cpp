@@ -23,15 +23,24 @@ Level::Level(sf::RenderTarget& target)
 		exit(EXIT_FAILURE);
 	}
 	
-	// Create the board and place first two random tiles
+	// Create the board, which will involve placing the first two random tiles
 	mBoard = std::make_shared<DrawableBoard>(mFont, mTextures);
-	mBoard->placeRandom();
-	mBoard->placeRandom();
 	
 	// Move the board into position (centered at the bottom of the window)
 	float distanceToEdge = (600 - mBoard->kBoardWidth) / 2.0f;
 	float halfBoard = mBoard->kBoardWidth / 2.0f;
 	mBoard->setCenter({600 / 2.0f, 800 - distanceToEdge - halfBoard});
+	
+	// Create text object
+	mTitle.setFont(*mFont);
+	mTitle.setString("2048 AI");
+	mTitle.setCharacterSize(80);
+	mTitle.setFillColor({119, 110, 101});
+	
+	// Position text object
+	sf::FloatRect titleBox = mTitle.getLocalBounds();
+	mTitle.setOrigin(titleBox.left + titleBox.width / 2.0f, 0);
+	mTitle.setPosition(600 / 2.0f, 0);
 }
 
 void Level::update(float deltaTime) {
@@ -39,6 +48,7 @@ void Level::update(float deltaTime) {
 }
 
 void Level::draw(float deltaTime) {
+	mCanvas.draw(mTitle);
 	mBoard->draw(mCanvas);
 }
 
@@ -67,6 +77,10 @@ void Level::keyPressed(sf::Keyboard::Key key) {
 		case sf::Keyboard::D:
 		case sf::Keyboard::L:
 			didMove = mBoard->shiftTilesRight();
+			break;
+		
+		case sf::Keyboard::R:
+			mBoard->tryAgain();
 			break;
 		
 		default:

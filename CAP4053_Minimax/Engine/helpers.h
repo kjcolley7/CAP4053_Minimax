@@ -249,7 +249,7 @@ T midY(const sf::Rect<T>& rect) {
  */
 template <typename T>
 sf::Vector2<T> getCenter(const sf::Rect<T>& rect) {
-	return {rect.left + rect.width / 2, rect.top + rect.height / 2};
+	return {rect.left + rect.width / T(2), rect.top + rect.height / T(2)};
 }
 
 /**

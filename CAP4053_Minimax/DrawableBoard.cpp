@@ -16,6 +16,7 @@
 const float DrawableBoard::kBoardWidth = 500.0f;
 const float DrawableBoard::kDividerWidth = 15.0f;
 const float DrawableBoard::kTileWidth = (kBoardWidth - 5 * kDividerWidth) / 4.0f;
+const sf::Color DrawableBoard::kBackgroundColor = {185, 173, 161};
 
 const sf::Color DrawableBoard::kTileColors[16] = {
 	/*     0 */ {202, 193, 181},
@@ -76,8 +77,8 @@ const unsigned DrawableBoard::kTileFontSizes[16] = {
 
 
 DrawableBoard::DrawableBoard(std::shared_ptr<sf::Font> font, std::shared_ptr<TextureAtlas> textures)
-: mFont(font), mBounds(0, 0, kBoardWidth, kBoardWidth) {
-	if(!textures->getSprite("Background", mSprBackground) ||
+: mFont(font), mBounds(0, 0, kBoardWidth, kBoardWidth), mIsGameOver(false) {
+	if(!textures->getSprite("Board", mSprBoard) ||
 	   !textures->getSprite("Tile", mSprTile)
 	) {
 		std::cerr << "Couldn't load board sprites!" << std::endl;
@@ -85,20 +86,42 @@ DrawableBoard::DrawableBoard(std::shared_ptr<sf::Font> font, std::shared_ptr<Tex
 	}
 	
 	// Make sure the sprites are displayed with the intended dimensions
-	setSize(mSprBackground, {kBoardWidth, kBoardWidth});
+	setSize(mSprBoard, {kBoardWidth, kBoardWidth});
 	setSize(mSprTile, {kTileWidth, kTileWidth});
+	
+	// Apply background color for board
+	mSprBoard.setColor(kBackgroundColor);
+	
+	// Create game over text object
+	mGameOver.setFont(*mFont);
+	mGameOver.setString("Game over!");
+	mGameOver.setCharacterSize(60);
+	mGameOver.setFillColor({119, 110, 101});
+	
+	// Position game over text
+	sf::FloatRect gameOverBox = mGameOver.getLocalBounds();
+	mGameOver.setOrigin(getCenter(gameOverBox));
+	mGameOver.setPosition(getCenter(mBounds));
+	
+	// Initialize board state
+	tryAgain();
 }
 
 
 void DrawableBoard::setCenter(sf::Vector2f center) {
 	mBounds.left = center.x - mBounds.width / 2.0f;
 	mBounds.top = center.y - mBounds.height / 2.0f;
-	mSprBackground.setPosition(mBounds.left, mBounds.top);
+	mSprBoard.setPosition(mBounds.left, mBounds.top);
+	mGameOver.setPosition(getCenter(mBounds));
 }
 
 
 void DrawableBoard::upPressed() {
 	if(shiftTilesUp()) {
+		if(isGameOver()) {
+			mIsGameOver = true;
+		}
+		
 		// TODO: animate
 	}
 }
@@ -106,6 +129,10 @@ void DrawableBoard::upPressed() {
 
 void DrawableBoard::downPressed() {
 	if(shiftTilesDown()) {
+		if(isGameOver()) {
+			mIsGameOver = true;
+		}
+		
 		// TODO: animate
 	}
 }
@@ -113,6 +140,10 @@ void DrawableBoard::downPressed() {
 
 void DrawableBoard::leftPressed() {
 	if(shiftTilesLeft()) {
+		if(isGameOver()) {
+			mIsGameOver = true;
+		}
+		
 		// TODO: animate
 	}
 }
@@ -120,6 +151,10 @@ void DrawableBoard::leftPressed() {
 
 void DrawableBoard::rightPressed() {
 	if(shiftTilesRight()) {
+		if(isGameOver()) {
+			mIsGameOver = true;
+		}
+		
 		// TODO: animate
 	}
 }
@@ -133,9 +168,17 @@ sf::Vector2f DrawableBoard::getSlotPosition(unsigned row, unsigned col) const {
 }
 
 
+void DrawableBoard::tryAgain() {
+	mIsGameOver = false;
+	mCompressedGrid = 0;
+	placeRandom();
+	placeRandom();
+}
+
+
 void DrawableBoard::draw(sf::RenderTarget& canvas) {
 	// Draw the background grid
-	canvas.draw(mSprBackground);
+	canvas.draw(mSprBoard);
 	
 	// Draw each of the tiles
 	for(int shift = MAKE_SHIFT(0, 0); shift <= MAKE_SHIFT(3, 3); shift = MAKE_RIGHT(shift)) {
@@ -155,11 +198,22 @@ void DrawableBoard::draw(sf::RenderTarget& canvas) {
 			
 			// Position the text in the center of the tile
 			sf::FloatRect box = text.getLocalBounds();
-			text.setOrigin(box.left + box.width / 2.0f, box.top + box.height / 2.0f);
+			text.setOrigin(getCenter(box));
 			text.setPosition(tilePos + (sf::Vector2f){kTileWidth / 2.0f, kTileWidth / 2.0f});
 			
 			// Draw it
 			canvas.draw(text);
 		}
+	}
+	
+	// isGameOver() is expensive, so cache the result
+	if(mIsGameOver || (mIsGameOver = isGameOver())) {
+		// Draw game over overlay
+		mSprBoard.setColor({238, 228, 218, 186});
+		canvas.draw(mSprBoard);
+		mSprBoard.setColor(kBackgroundColor);
+		
+		// Draw game over message
+		canvas.draw(mGameOver);
 	}
 }

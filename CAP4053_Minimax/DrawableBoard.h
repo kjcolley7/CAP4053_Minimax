@@ -28,20 +28,24 @@ public:
 	void leftPressed();
 	void rightPressed();
 	
+	void tryAgain();
+	
 	void draw(sf::RenderTarget& canvas);
 	
 private:
 	sf::Vector2f getSlotPosition(unsigned row, unsigned col) const;
 	
 	static const float kDividerWidth, kTileWidth;
+	static const sf::Color kBackgroundColor;
 	static const sf::Color kTileColors[16];
 	static const sf::Color kTileFontColors[16];
 	static const unsigned kTileFontSizes[16];
 	
 	sf::FloatRect mBounds;
 	std::shared_ptr<sf::Font> mFont;
-	sf::Sprite mSprBackground;
-	sf::Sprite mSprTile;
+	sf::Sprite mSprBoard, mSprTile;
+	sf::Text mGameOver;
+	bool mIsGameOver;
 };
 
 #endif /* MM_DRAWABLEBOARD_H */
