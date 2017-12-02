@@ -30,15 +30,53 @@ const sf::Color DrawableBoard::kTileColors[16] = {
 	/*   512 */ {231, 200, 100},
 	/*  1024 */ {231, 197,  89},
 	/*  2048 */ {231, 195,  79},
-	/*  4096 */ {},
-	/*  8192 */ {},
-	/* 16384 */ {},
-	/* 32768 */ {}
+	/*  4096 */ { 60,  58,  50},
+	/*  8192 */ { 60,  58,  50},
+	/* 16384 */ { 60,  58,  50},
+	/* 32768 */ { 60,  58,  50}
+};
+
+const sf::Color DrawableBoard::kTileFontColors[16] = {
+	/*     0 */ {},
+	/*     2 */ {117, 110, 102},
+	/*     4 */ {117, 110, 102},
+	/*     8 */ {255, 255, 255},
+	/*    16 */ {255, 255, 255},
+	/*    32 */ {255, 255, 255},
+	/*    64 */ {255, 255, 255},
+	/*   128 */ {255, 255, 255},
+	/*   256 */ {255, 255, 255},
+	/*   512 */ {255, 255, 255},
+	/*  1024 */ {255, 255, 255},
+	/*  2048 */ {255, 255, 255},
+	/*  4096 */ {255, 255, 255},
+	/*  8192 */ {255, 255, 255},
+	/* 16384 */ {255, 255, 255},
+	/* 32768 */ {255, 255, 255}
+};
+
+const unsigned DrawableBoard::kTileFontSizes[16] = {
+	/*     0 */ 0,
+	/*     2 */ 55,
+	/*     4 */ 55,
+	/*     8 */ 55,
+	/*    16 */ 55,
+	/*    32 */ 55,
+	/*    64 */ 55,
+	/*   128 */ 45,
+	/*   256 */ 45,
+	/*   512 */ 45,
+	/*  1024 */ 35,
+	/*  2048 */ 35,
+	/*  4096 */ 30,
+	/*  8192 */ 30,
+	/* 16384 */ 30,
+	/* 32768 */ 30
 };
 
 
 DrawableBoard::DrawableBoard(std::shared_ptr<sf::Font> font, std::shared_ptr<TextureAtlas> textures)
-: mBounds(0, 0, kBoardWidth, kBoardWidth) {
+: mFont(font), mBounds(0, 0, kBoardWidth, kBoardWidth) {
 	if(!textures->getSprite("Background", mSprBackground) ||
 	   !textures->getSprite("Tile", mSprTile)
 	) {
@@ -101,11 +139,27 @@ void DrawableBoard::draw(sf::RenderTarget& canvas) {
 	
 	// Draw each of the tiles
 	for(int shift = MAKE_SHIFT(0, 0); shift <= MAKE_SHIFT(3, 3); shift = MAKE_RIGHT(shift)) {
+		// Get the tile value and use it to choose the tile's background color
 		Tile tile = EXTRACT_TILE(mCompressedGrid, shift);
 		mSprTile.setColor(kTileColors[tile]);
-		mSprTile.setPosition(getSlotPosition(GET_SHIFT_ROW(shift), GET_SHIFT_COL(shift)));
+		
+		sf::Vector2f tilePos = getSlotPosition(GET_SHIFT_ROW(shift), GET_SHIFT_COL(shift));
+		mSprTile.setPosition(tilePos);
 		canvas.draw(mSprTile);
 		
-		// TODO: Draw value number on tile using font
+		if(tile != TILE_EMPTY) {
+			// Draw value number on tile using the font size for the tile's value
+			std::string tileValue = std::to_string(TILE_VALUE(tile));
+			sf::Text text{tileValue, *mFont, kTileFontSizes[tile]};
+			text.setFillColor(kTileFontColors[tile]);
+			
+			// Position the text in the center of the tile
+			sf::FloatRect box = text.getLocalBounds();
+			text.setOrigin(box.left + box.width / 2.0f, box.top + box.height / 2.0f);
+			text.setPosition(tilePos + (sf::Vector2f){kTileWidth / 2.0f, kTileWidth / 2.0f});
+			
+			// Draw it
+			canvas.draw(text);
+		}
 	}
 }

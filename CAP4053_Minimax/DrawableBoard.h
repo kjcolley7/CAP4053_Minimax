@@ -35,9 +35,11 @@ private:
 	
 	static const float kDividerWidth, kTileWidth;
 	static const sf::Color kTileColors[16];
+	static const sf::Color kTileFontColors[16];
+	static const unsigned kTileFontSizes[16];
 	
 	sf::FloatRect mBounds;
-	sf::Font mFont;
+	std::shared_ptr<sf::Font> mFont;
 	sf::Sprite mSprBackground;
 	sf::Sprite mSprTile;
 };

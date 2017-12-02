@@ -452,4 +452,6 @@ void Board::print() const {
 		// Spacer at bottom of row
 		printf("       |       |       |       \n");
 	}
+	
+	printf("\n\n");
 }

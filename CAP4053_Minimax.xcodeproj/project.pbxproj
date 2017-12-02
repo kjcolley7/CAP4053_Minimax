@@ -13,8 +13,8 @@
 		0A4EA28E1FC226F8008DED9C /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A4EA2871FC226F8008DED9C /* main.cpp */; };
 		0A4EA28F1FC226F8008DED9C /* GameEngine.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A4EA2881FC226F8008DED9C /* GameEngine.cpp */; };
 		0A4EA2901FC226F8008DED9C /* TextureAtlas.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A4EA28A1FC226F8008DED9C /* TextureAtlas.cpp */; };
-		0A4EA2931FC23036008DED9C /* Roboto-Black.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 0A4EA2921FC23035008DED9C /* Roboto-Black.ttf */; };
 		0A4EA2961FC23230008DED9C /* Board.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 0A4EA2941FC23230008DED9C /* Board.cpp */; };
+		0AA934F81FD344370043CCBE /* ClearSans-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 0AA934F71FD344370043CCBE /* ClearSans-Bold.ttf */; };
 		0AB60DDF1FD3222100EC61A0 /* sprites.pack in Resources */ = {isa = PBXBuildFile; fileRef = 0AB60DDD1FD3222100EC61A0 /* sprites.pack */; };
 		0AB60DE01FD3222100EC61A0 /* sprites.png in Resources */ = {isa = PBXBuildFile; fileRef = 0AB60DDE1FD3222100EC61A0 /* sprites.png */; };
 /* End PBXBuildFile section */
@@ -33,10 +33,10 @@
 		0A4EA2891FC226F8008DED9C /* GameEngine.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = GameEngine.h; sourceTree = "<group>"; };
 		0A4EA28A1FC226F8008DED9C /* TextureAtlas.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = TextureAtlas.cpp; sourceTree = "<group>"; };
 		0A4EA28B1FC226F8008DED9C /* TextureAtlas.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = TextureAtlas.h; sourceTree = "<group>"; };
-		0A4EA2921FC23035008DED9C /* Roboto-Black.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Roboto-Black.ttf"; sourceTree = "<group>"; };
 		0A4EA2941FC23230008DED9C /* Board.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = Board.cpp; sourceTree = "<group>"; };
 		0A4EA2951FC23230008DED9C /* Board.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Board.h; sourceTree = "<group>"; };
 		0A4EA2971FC23296008DED9C /* Direction.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Direction.h; sourceTree = "<group>"; };
+		0AA934F71FD344370043CCBE /* ClearSans-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "ClearSans-Bold.ttf"; sourceTree = "<group>"; };
 		0AB60DDD1FD3222100EC61A0 /* sprites.pack */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = sprites.pack; sourceTree = "<group>"; };
 		0AB60DDE1FD3222100EC61A0 /* sprites.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = sprites.png; sourceTree = "<group>"; };
 		0ACFF0301F7C3977002EFA7E /* CAP4053_Minimax.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CAP4053_Minimax.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -56,9 +56,9 @@
 		0A4EA2811FC00017008DED9C /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				0AA934F71FD344370043CCBE /* ClearSans-Bold.ttf */,
 				0AB60DDD1FD3222100EC61A0 /* sprites.pack */,
 				0AB60DDE1FD3222100EC61A0 /* sprites.png */,
-				0A4EA2921FC23035008DED9C /* Roboto-Black.ttf */,
 				0A4EA2641FBFFFCA008DED9C /* CAP4053_Minimax-Info.plist */,
 			);
 			path = Resources;
@@ -170,7 +170,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				0AB60DDF1FD3222100EC61A0 /* sprites.pack in Resources */,
-				0A4EA2931FC23036008DED9C /* Roboto-Black.ttf in Resources */,
+				0AA934F81FD344370043CCBE /* ClearSans-Bold.ttf in Resources */,
 				0AB60DE01FD3222100EC61A0 /* sprites.png in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

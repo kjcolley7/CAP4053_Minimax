@@ -18,7 +18,7 @@ Level::Level(sf::RenderTarget& target)
 : mCanvas(target), mTextures(std::make_shared<TextureAtlas>(resourcePath() + "sprites.pack")) {
 	// Load font
 	mFont = std::make_shared<sf::Font>();
-	if(!mFont->loadFromFile(resourcePath() + "Roboto-Black.ttf")) {
+	if(!mFont->loadFromFile(resourcePath() + "ClearSans-Bold.ttf")) {
 		std::cerr << "Failed to load font file" << std::endl;
 		exit(EXIT_FAILURE);
 	}
@@ -75,6 +75,7 @@ void Level::keyPressed(sf::Keyboard::Key key) {
 	
 	if(didMove) {
 		mBoard->placeRandom();
+		mBoard->print();
 		if(mBoard->isGameOver()) {
 			// TODO: Display as text in the game window
 			std::cout << "Game over!" << std::endl;
