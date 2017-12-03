@@ -17,9 +17,9 @@ static inline CompressedGrid insertingTile(CompressedGrid grid, int shift, Compr
 	return grid | (tile << shift);
 }
 
-static inline CompressedGrid placingTile(CompressedGrid grid, unsigned row, unsigned col, CompressedGrid tile) {
-	return insertingTile(grid, MAKE_SHIFT(row, col), tile);
-}
+//static inline CompressedGrid placingTile(CompressedGrid grid, unsigned row, unsigned col, CompressedGrid tile) {
+//	return insertingTile(grid, MAKE_SHIFT(row, col), tile);
+//}
 
 static inline CompressedGrid applyingTile(CompressedGrid grid, int shift, CompressedGrid tile) {
 	return ((grid & ~(TILE_MASK << shift)) | (tile << shift));
@@ -611,9 +611,10 @@ void Board::print() const {
 //}
 
 
-static inline int scoreLine(uint_fast8_t* row) {
+static inline int scoreLine(uint_fast8_t* row, Tile biggest) {
 	int score = 0;
 	
+	// Find biggest tile and its index in the line
 	Tile big = TILE_EMPTY;
 	int bigIdx = 0;
 	for(int i = 0; i < 4; i++) {
@@ -631,13 +632,18 @@ static inline int scoreLine(uint_fast8_t* row) {
 	
 	// Best if the largest tile is on the edge
 	if(bigIdx == 0 || bigIdx == 3) {
-		score += 2000;
+		score += 2400;
+	}
+	if(big == biggest) {
+		if(bigIdx == 1 || bigIdx == 2) {
+			score -= 1000;
+		}
 	}
 	
 	// Check for tiles that can almost be merged
 	for(int i = 0; i < 3; i++) {
 		if(row[i] == row[i+1] + 1 || row[i] == row[i+1] - 1) {
-			score += 100;
+			score += 80;
 		}
 	}
 	
@@ -645,7 +651,7 @@ static inline int scoreLine(uint_fast8_t* row) {
 	if((row[0] > row[1] && row[1] > row[2] && row[2] > row[3]) ||
 	   (row[0] < row[1] && row[1] < row[2] && row[2] < row[3])
 	) {
-		score += 1000;
+		score += 1500;
 	}
 	
 	return score;
@@ -654,15 +660,16 @@ static inline int scoreLine(uint_fast8_t* row) {
 
 static inline int scoreLayout(CompressedGrid grid) {
 	int score = 0;
-	/*
-	 * Scoring Criteria
-	 *
-	 * 1. Highest tile value on the board
-	 * 2. Negated manhattan distance between largest tile and the top-left corner
-	 * 3. Negated manhattan distance between largest tile and second largest
-	 */
-	
 	uint_fast8_t line[4];
+	
+	// Find largest tile on the board
+	Tile biggest = TILE_EMPTY;
+	for(CompressedGrid tmp = grid; tmp; tmp >>= MAKE_COL_SHIFT(1)) {
+		Tile cur = tmp & TILE_MASK;
+		if(cur > biggest) {
+			biggest = cur;
+		}
+	}
 	
 	// Score horizontal stripes
 	for(int r = 0; r < 4; r++) {
@@ -672,11 +679,11 @@ static inline int scoreLayout(CompressedGrid grid) {
 				++line[c];
 			}
 		}
-		int rowScore = scoreLine(line);
+		int lineScore = scoreLine(line, biggest);
 		if(r == 0 || r == 3) {
-			rowScore *= 5;
+			lineScore *= 5;
 		}
-		score += rowScore;
+		score += lineScore;
 	}
 	
 	// Score vertical stripes
@@ -687,11 +694,11 @@ static inline int scoreLayout(CompressedGrid grid) {
 				++line[r];
 			}
 		}
-		int rowScore = scoreLine(line);
+		int lineScore = scoreLine(line, biggest);
 		if(c == 0 || c == 3) {
-			rowScore *= 5;
+			lineScore *= 5;
 		}
-		score += rowScore;
+		score += lineScore;
 	}
 	
 	return score;

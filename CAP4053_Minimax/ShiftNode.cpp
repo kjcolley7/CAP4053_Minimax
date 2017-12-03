@@ -45,6 +45,11 @@ void ShiftNode::deallocate() {
 }
 
 
+Board ShiftNode::getBoard() const {
+	return mBoard;
+}
+
+
 void ShiftNode::setBoard(Board newBoard) {
 	prune(nullptr);
 	mBoard = newBoard;

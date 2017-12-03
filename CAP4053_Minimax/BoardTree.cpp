@@ -29,7 +29,21 @@ bool BoardTree::isValid() const {
 
 
 Direction BoardTree::getBestMove() {
-	int score = mHead->getMaxScore(kMaximumDepth, INT_MIN, INT_MAX, &mBestMove);
+	// If there are few holes left on the board, allow going one level deeper
+	int depth = kMaximumDepth;
+	{
+		Board board = mHead->getBoard();
+		int holes[16];
+		unsigned holeCount = board.findHoles(holes);
+		if(holeCount >= 3) {
+			--depth;
+		}
+	}
+	
+	// Compute max score
+	int score = mHead->getMaxScore(depth, INT_MIN, INT_MAX, &mBestMove);
+	
+	// Get printable direction for log
 	char cDir;
 	switch(mBestMove) {
 		case Direction::UP:
@@ -49,6 +63,7 @@ Direction BoardTree::getBestMove() {
 			break;
 	}
 	
+	// Log results
 	std::cerr << "Picking direction " << cDir << " with score " << score << std::endl;
 	return mBestMove;
 }

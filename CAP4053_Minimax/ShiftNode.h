@@ -23,6 +23,7 @@ public:
 	void init(Board initBoard);
 	void deallocate();
 	
+	Board getBoard() const;
 	void setBoard(Board newBoard);
 	PlaceNode* getChild(Direction dir);
 	void prune(ShiftNode* newHead);
