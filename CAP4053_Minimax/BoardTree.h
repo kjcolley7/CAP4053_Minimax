@@ -45,11 +45,16 @@ public:
 	virtual Board getBoard() override;
 	virtual void getChildren(PlaceNode* children[16][2]);
 	virtual PlaceNode* getChild(unsigned position, bool isTwo);
+
+	int getScore();
+	void setScore(int value);
+
 	void populateChildren();
 
 private:
 	PlaceNode* mChildren[16][2];
 	Board mBoard;
+	int mScore;
 };
 
 // This represents a minimizing node
@@ -60,6 +65,10 @@ public:
 	Board getBoard();
 	virtual void getChildren(ShiftNode* children[4]);
 	virtual ShiftNode* getChild(Direction dir);
+
+	int getScore();
+	void setScore(int value);
+
 	void populateChildren();
 
 private:
@@ -68,6 +77,9 @@ private:
 	ShiftNode* mLeftChild;
 	ShiftNode* mRightChild;
 	Board mBoard;
+	int mScore;
+
+	void populatePlaceNodes();
 };
 
 #endif /* BoardTree_h */
