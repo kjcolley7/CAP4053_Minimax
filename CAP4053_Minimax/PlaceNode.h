@@ -10,6 +10,7 @@
 #define MM_PLACENODE_H
 
 #include <queue>
+#include <climits>
 #include "Board.h"
 
 class ShiftNode;
@@ -25,7 +26,7 @@ public:
 	
 	ShiftNode* getChild(unsigned row, unsigned col, Tile tile);
 	void prune(ShiftNode* newHead);
-	int getMinScore(unsigned depth, int alpha, int beta);
+	int getMinScore(unsigned depth, int alpha = INT_MIN, int beta = INT_MAX);
 	
 private:
 	void populateChildren();

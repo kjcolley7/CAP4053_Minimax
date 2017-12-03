@@ -10,6 +10,7 @@
 #define MM_SHIFTNODE_H
 
 #include <queue>
+#include <climits>
 #include "Board.h"
 
 class PlaceNode;
@@ -26,12 +27,12 @@ public:
 	void setBoard(Board newBoard);
 	PlaceNode* getChild(Direction dir);
 	void prune(ShiftNode* newHead);
-	int getMaxScore(unsigned depth, int alpha, int beta);
-	int getMaxScore(unsigned depth, int alpha, int beta, Direction* dir);
+	int getMaxScore(unsigned depth, int alpha = INT_MIN, int beta = INT_MAX);
+	int getMaxScore(Direction* dir, unsigned depth, int alpha = INT_MIN, int beta = INT_MAX);
 	
-private:
 	void populateChildren();
 	
+private:
 	static const PlaceNode* kEmptyChildren[4];
 	
 	static std::queue<ShiftNode*> sPool;

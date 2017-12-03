@@ -74,6 +74,11 @@ public:
 	 */
 	void mouseMoved(int x, int y);
 	
+	/**
+	 * Called when the window is closed.
+	 */
+	void closed();
+	
 private:
 	sf::RenderTarget& mCanvas;
 	std::shared_ptr<TextureAtlas> mTextures;

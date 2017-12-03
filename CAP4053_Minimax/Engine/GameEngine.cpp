@@ -24,6 +24,7 @@ int GameEngine::run() {
 		if(mWindow.pollEvent(event)) {
 			switch(event.type) {
 				case sf::Event::Closed:
+					mLevel.closed();
 					mWindow.close();
 					break;
 					

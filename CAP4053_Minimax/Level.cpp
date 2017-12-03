@@ -131,3 +131,7 @@ void Level::mouseButtonReleased(int x, int y) {
 void Level::mouseMoved(int x, int y) {
 	// Nothing to do
 }
+
+void Level::closed() {
+	mMinimax.reset();
+}

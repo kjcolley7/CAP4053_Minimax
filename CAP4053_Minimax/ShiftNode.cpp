@@ -120,7 +120,7 @@ int ShiftNode::getMaxScore(unsigned depth, int alpha, int beta) {
 }
 
 
-int ShiftNode::getMaxScore(unsigned depth, int alpha, int beta, Direction* dir) {
+int ShiftNode::getMaxScore(Direction* dir, unsigned depth, int alpha, int beta) {
 	if(depth == 0) {
 		return mBoard.estimateScore();
 	}

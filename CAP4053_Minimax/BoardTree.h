@@ -10,6 +10,8 @@
 #define MM_BOARDTREE_H
 
 #include <memory>
+#include <thread>
+#include <mutex>
 #include <cstdio>
 #include "Board.h"
 #include "Direction.h"
@@ -19,6 +21,7 @@
 class BoardTree {
 public:
 	BoardTree(Board initBoard);
+	~BoardTree();
 	
 	void setBoard(Board newBoard);
 	bool isValid() const;
@@ -31,8 +34,18 @@ private:
 	
 	static const unsigned kMaximumDepth;
 	
+	struct ThreadInfo {
+		std::unique_ptr<std::thread> thread;
+		std::mutex mutex;
+		PlaceNode* start;
+		int result;
+		Direction dir;
+		bool terminate;
+	};
+	
 	ShiftNode* mHead;
 	Direction mBestMove;
+	ThreadInfo mThreads[4];
 };
 
 #endif /* MM_BOARDTREE_H */
