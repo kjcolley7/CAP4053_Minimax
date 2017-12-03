@@ -8,21 +8,28 @@
 
 #include "BoardTree.h"
 #include <climits>
+#include <stack>
 
-Board Node::getBoard() {
-	return mBoard;
-}
 void BoardTree::populateTree() {
 	unsigned depth = 0;
-	Node* currNode = mHead;
-	while(depth < kMaximumDepth) {
+	std::stack<Node*> stack;
+	stack.push(mHead);
+	while(!stack.empty()) {
+		Node* currNode = stack.top();
+		stack.pop();
 		if(mIsComputerTurn) {
 			PlaceNode* place = (PlaceNode*)currNode;
 			mIsComputerTurn = false;
 			ShiftNode* children[4];
 			place->getChildren(children);
 			for(ShiftNode* node : children) {
-				node->populateChildren();
+				if(node != nullptr) {
+					node->populateChildren();
+					stack.push(node);
+					int nodeScore = node->getScore();
+					if(nodeScore < place->getScore())
+						place->setScore(nodeScore);
+				}
 			}
 		}
 		else {
@@ -32,7 +39,14 @@ void BoardTree::populateTree() {
 			shift->getChildren(children);
 			for(int i = 0; i < 16; i++) {
 				for(int j = 0; j < 2; j++) {
-					children[i][j]->populateChildren();
+					PlaceNode* node = children[i][j];
+					if(node != nullptr) {
+						node->populateChildren();
+						stack.push(children[i][j]);
+						int nodeScore = node->getScore();
+						if(nodeScore > shift->getScore())
+							shift->setScore(nodeScore);
+					}
 				}
 			}
 		}
@@ -61,6 +75,7 @@ void ShiftNode::setScore(int value) {
 
 void ShiftNode::populateChildren() {
 	int count = 0;
+	int nullCount = 0;
 	for(int i = 0; i < 4; i++) {
 		for(int j = 0; j < 4; j++) {
 			for(int k = 0; k < 2; k++) {
@@ -78,13 +93,18 @@ void ShiftNode::populateChildren() {
 						break;
 					}
 				}
-				if(holesHaveBeenChanged)
+				if(holesHaveBeenChanged) {
 					mChildren[count][k] = new PlaceNode(tempBoard);
+					mChildren[count][k]->setScore(INT_MAX);
+				}
+				else
+					nullCount++;
 			}
 			count++;
 		}
 	}
-
+	if(nullCount == 32)
+		mScore = mBoard.estimateScore();
 }
 
 void ShiftNode::getChildren(PlaceNode* children[16][2]) {
@@ -110,29 +130,41 @@ void PlaceNode::setScore(int value) {
 
 void PlaceNode::populateChildren() {
 	Board tempBoard = mBoard;
+	int nullCount = 0;
 	
 	if(tempBoard.shiftTilesUp()) {
 		mUpChild = new ShiftNode(tempBoard);
 		mUpChild->setScore(INT_MIN);
 	}
+	else
+		nullCount++;
 
 	tempBoard = mBoard;
 	if(tempBoard.shiftTilesDown()) {
 		mDownChild = new ShiftNode(tempBoard);
 		mDownChild->setScore(INT_MIN);
 	}
+	else
+		nullCount++;
 
 	tempBoard = mBoard;
 	if(tempBoard.shiftTilesLeft()) {
 		mLeftChild = new ShiftNode(tempBoard);
 		mLeftChild->setScore(INT_MIN);
 	}
+	else
+		nullCount++;
 
 	tempBoard = mBoard;
 	if(tempBoard.shiftTilesRight()) {
 		mRightChild = new ShiftNode(tempBoard);
 		mRightChild->setScore(INT_MIN);
 	}
+	else
+		nullCount++;
+
+	if(nullCount == 4)
+		mScore = mBoard.estimateScore();
 }
 
 void PlaceNode::getChildren(ShiftNode* children[4]) {

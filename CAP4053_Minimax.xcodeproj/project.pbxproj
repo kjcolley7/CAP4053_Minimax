@@ -17,7 +17,6 @@
 		0AA934F81FD344370043CCBE /* ClearSans-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 0AA934F71FD344370043CCBE /* ClearSans-Bold.ttf */; };
 		0AB60DDF1FD3222100EC61A0 /* sprites.pack in Resources */ = {isa = PBXBuildFile; fileRef = 0AB60DDD1FD3222100EC61A0 /* sprites.pack */; };
 		0AB60DE01FD3222100EC61A0 /* sprites.png in Resources */ = {isa = PBXBuildFile; fileRef = 0AB60DDE1FD3222100EC61A0 /* sprites.png */; };
-		42A729F11FD337C2008C1F6D /* ComputerPlayer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 42A729EF1FD337C2008C1F6D /* ComputerPlayer.cpp */; };
 		42D0FF921FD37A96004B19CA /* BoardTree.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 42D0FF901FD37A96004B19CA /* BoardTree.cpp */; };
 /* End PBXBuildFile section */
 
@@ -42,8 +41,6 @@
 		0AB60DDD1FD3222100EC61A0 /* sprites.pack */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = sprites.pack; sourceTree = "<group>"; };
 		0AB60DDE1FD3222100EC61A0 /* sprites.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = sprites.png; sourceTree = "<group>"; };
 		0ACFF0301F7C3977002EFA7E /* CAP4053_Minimax.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CAP4053_Minimax.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		42A729EF1FD337C2008C1F6D /* ComputerPlayer.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = ComputerPlayer.cpp; sourceTree = "<group>"; };
-		42A729F01FD337C2008C1F6D /* ComputerPlayer.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ComputerPlayer.h; sourceTree = "<group>"; };
 		42D0FF901FD37A96004B19CA /* BoardTree.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = BoardTree.cpp; sourceTree = "<group>"; };
 		42D0FF911FD37A96004B19CA /* BoardTree.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = BoardTree.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -82,8 +79,6 @@
 				0A4EA2941FC23230008DED9C /* Board.cpp */,
 				0A3C77DB1FCCAF3C0060FBFF /* DrawableBoard.h */,
 				0A3C77DA1FCCAF3C0060FBFF /* DrawableBoard.cpp */,
-				42A729F01FD337C2008C1F6D /* ComputerPlayer.h */,
-				42A729EF1FD337C2008C1F6D /* ComputerPlayer.cpp */,
 				42D0FF911FD37A96004B19CA /* BoardTree.h */,
 				42D0FF901FD37A96004B19CA /* BoardTree.cpp */,
 				0A4EA2871FC226F8008DED9C /* main.cpp */,
@@ -215,7 +210,6 @@
 				0A3C77DC1FCCAF3C0060FBFF /* DrawableBoard.cpp in Sources */,
 				0A4EA28C1FC226F8008DED9C /* helpers.mm in Sources */,
 				0A4EA28E1FC226F8008DED9C /* main.cpp in Sources */,
-				42A729F11FD337C2008C1F6D /* ComputerPlayer.cpp in Sources */,
 				42D0FF921FD37A96004B19CA /* BoardTree.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

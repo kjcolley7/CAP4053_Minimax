@@ -32,19 +32,17 @@ private:
 // Generic node class to allow easier traversal through the tree
 class Node {
 public:
-	virtual Board getBoard() = 0;
 private:
 	Board mBoard;
 };
 
-// This represents a maximizing node
+// This represents a minimizing node
 class ShiftNode : public Node {
 public:
 	ShiftNode(Board initBoard);
 
-	virtual Board getBoard() override;
-	virtual void getChildren(PlaceNode* children[16][2]);
-	virtual PlaceNode* getChild(unsigned position, bool isTwo);
+	void getChildren(PlaceNode* children[16][2]);
+	PlaceNode* getChild(unsigned position, bool isTwo);
 
 	int getScore();
 	void setScore(int value);
@@ -55,16 +53,16 @@ private:
 	PlaceNode* mChildren[16][2];
 	Board mBoard;
 	int mScore;
+	PlaceNode* mMinNode;
 };
 
-// This represents a minimizing node
+// This represents a maximizing node
 class PlaceNode : public Node {
 public:
 	PlaceNode(Board initBoard);
 
-	Board getBoard();
-	virtual void getChildren(ShiftNode* children[4]);
-	virtual ShiftNode* getChild(Direction dir);
+	void getChildren(ShiftNode* children[4]);
+	ShiftNode* getChild(Direction dir);
 
 	int getScore();
 	void setScore(int value);
@@ -78,6 +76,7 @@ private:
 	ShiftNode* mRightChild;
 	Board mBoard;
 	int mScore;
+	ShiftNode* mMaxNode;
 
 	void populatePlaceNodes();
 };
