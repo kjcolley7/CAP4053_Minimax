@@ -38,6 +38,9 @@ Direction BoardTree::getBestMove() {
 		if(holeCount >= 3) {
 			--depth;
 		}
+		if(holeCount >= 12) {
+			--depth;
+		}
 	}
 	
 	// Compute max score

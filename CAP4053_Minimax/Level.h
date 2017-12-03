@@ -81,6 +81,7 @@ private:
 	std::shared_ptr<DrawableBoard> mBoard;
 	sf::Text mTitle;
 	std::unique_ptr<BoardTree> mMinimax;
+	bool mAIEnabled;
 };
 
 #endif /* MM_LEVEL_H */

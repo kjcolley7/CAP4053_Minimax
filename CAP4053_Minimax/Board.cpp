@@ -13,13 +13,17 @@
 #include "BoardPrivate.h"
 
 
+uint16_t Board::shiftTable[65536];
+int Board::scoreTable[65536];
+
+
 static inline CompressedGrid insertingTile(CompressedGrid grid, int shift, CompressedGrid tile) {
 	return grid | (tile << shift);
 }
 
-//static inline CompressedGrid placingTile(CompressedGrid grid, unsigned row, unsigned col, CompressedGrid tile) {
-//	return insertingTile(grid, MAKE_SHIFT(row, col), tile);
-//}
+static inline CompressedGrid placingTile(CompressedGrid grid, unsigned row, unsigned col, CompressedGrid tile) {
+	return insertingTile(grid, MAKE_SHIFT(row, col), tile);
+}
 
 static inline CompressedGrid applyingTile(CompressedGrid grid, int shift, CompressedGrid tile) {
 	return ((grid & ~(TILE_MASK << shift)) | (tile << shift));
@@ -30,287 +34,125 @@ static inline CompressedGrid settingTile(CompressedGrid grid, unsigned row, unsi
 }
 
 
-/*
- * These shifting<Row/Column><Direction> functions all do pretty much the same thing. They use dst,
- * which is a shift value (grid location), to decide where the tiles should be shifted to. Then, delta
- * is a shift value that decides how far the tiles are shifting, whether it's by one, two, or three cells.
- * Take for example the following grid:
- *
- *   2 | 4 | 2 | 8
- *  ---+---+---+---
- *     | . |   |
- *  ---+---+---+---
- *     | 4 |   |
- *  ---+---+---+---
- *     | 4 |   |
- *
- * Calling shiftingColumnUp(grid, MAKE_SHIFT(1, 1)) would produce the following result:
- *
- *   2 | 4 | 2 | 8
- *  ---+---+---+---
- *     | 4 |   |
- *  ---+---+---+---
- *     | 4 |   |
- *  ---+---+---+---
- *     |   |   |
- *
- */
-static inline CompressedGrid shiftingColumnUp(CompressedGrid grid, int dst, int delta = MAKE_ROW_SHIFT(1)) {
-	for(int src = dst + delta;
-		GET_SHIFT_ROW(dst) < GET_SHIFT_ROW(src);
-		dst = MAKE_DOWN(dst), src = dst + delta
-	) {
-		grid = applyingTile(grid, dst, EXTRACT_TILE(grid, src));
+static inline uint16_t extractRow(CompressedGrid grid, unsigned row) {
+	return (grid >> MAKE_ROW_SHIFT(row)) & 0xffff;
+}
+
+static inline uint16_t extractCol(CompressedGrid grid, unsigned col) {
+	uint16_t ret = 0;
+	for(int shift = MAKE_SHIFT(0, col); shift < 64; shift = MAKE_DOWN(shift)) {
+		ret |= EXTRACT_TILE(grid, shift) << TILE_BITS * GET_SHIFT_ROW(shift);
 	}
-	for(; GET_SHIFT_ROW(dst) != 0; dst = MAKE_DOWN(dst)) {
-		grid = applyingTile(grid, dst, TILE_EMPTY);
+	return ret;
+}
+
+static inline CompressedGrid settingRow(CompressedGrid grid, unsigned row, uint16_t line) {
+	grid &= ~((CompressedGrid)0xffff << MAKE_ROW_SHIFT(row));
+	grid |= (CompressedGrid)line << MAKE_ROW_SHIFT(row);
+	return grid;
+}
+
+static inline CompressedGrid settingColumn(CompressedGrid grid, unsigned col, uint16_t line) {
+	grid &= ~(0x000f000f000f000f << MAKE_COL_SHIFT(col));
+	for(unsigned row = 0; row < 4; row++) {
+		grid = placingTile(grid, row, col, line & TILE_MASK);
+		line >>= TILE_BITS;
 	}
 	return grid;
 }
 
-static inline CompressedGrid shiftingColumnDown(CompressedGrid grid, int dst, int delta = MAKE_ROW_SHIFT(1)) {
-	for(int src = dst - delta;
-		GET_SHIFT_ROW(src) < GET_SHIFT_ROW(dst);
-		dst = MAKE_UP(dst), src = dst - delta
-	) {
-		grid = applyingTile(grid, dst, EXTRACT_TILE(grid, src));
-	}
-	for(; GET_SHIFT_ROW(dst) != 3; dst = MAKE_UP(dst)) {
-		grid = applyingTile(grid, dst, TILE_EMPTY);
-	}
-	return grid;
-}
 
-static inline CompressedGrid shiftingRowLeft(CompressedGrid grid, int dst, int delta = MAKE_COL_SHIFT(1)) {
+static inline uint16_t shiftingLine(uint16_t line, int dst, int delta = MAKE_COL_SHIFT(1)) {
 	for(int src = dst + delta;
 		GET_SHIFT_COL(dst) < GET_SHIFT_COL(src);
 		dst = MAKE_RIGHT(dst), src = dst + delta
 	) {
-		grid = applyingTile(grid, dst, EXTRACT_TILE(grid, src));
+		line = (line & ~(TILE_MASK << dst)) | (EXTRACT_TILE(line, src) << dst);
 	}
 	for(; GET_SHIFT_COL(dst) != 0; dst = MAKE_RIGHT(dst)) {
-		grid = applyingTile(grid, dst, TILE_EMPTY);
+		line = (line & ~(TILE_MASK << dst));
 	}
-	return grid;
+	return line;
 }
 
-static inline CompressedGrid shiftingRowRight(CompressedGrid grid, int dst, int delta = MAKE_COL_SHIFT(1)) {
-	for(int src = dst - delta;
-		GET_SHIFT_COL(src) < GET_SHIFT_COL(dst);
-		dst = MAKE_LEFT(dst), src = dst - delta
-	) {
-		grid = applyingTile(grid, dst, EXTRACT_TILE(grid, src));
+
+void Board::fillShiftTable() {
+	for(uint32_t line = 0; line < 65536; ++line) {
+		uint16_t cur = line;
+		
+		// Skip past all holes
+		for(int shift = 0; shift < (4 * TILE_BITS); shift += TILE_BITS) {
+			Tile tile = EXTRACT_TILE(cur, shift);
+			if(tile == TILE_EMPTY) {
+				int delta_shift = TILE_BITS;
+				while(GET_SHIFT_COL(shift + delta_shift) != 0 &&
+				      EXTRACT_TILE(cur, shift + delta_shift) == TILE_EMPTY
+				) {
+					delta_shift += TILE_BITS;
+				}
+				
+				// Make sure it's not just an entire line of zeros
+				if(GET_SHIFT_COL(shift + delta_shift) != 0) {
+					cur = shiftingLine(cur, shift, delta_shift);
+				}
+			}
+		}
+		
+		// Only run for tiles in the first three slots
+		for(int shift = 0; shift < (3 * TILE_BITS); shift += TILE_BITS) {
+			unsigned tile = EXTRACT_TILE(cur, shift);
+			if(tile != TILE_EMPTY && tile == EXTRACT_TILE(cur, shift + TILE_BITS)) {
+				/*
+				 *   X X X X -> X X X X
+				 *   A A A A -> B B 0 0
+				 *   A A B C -> B B C 0
+				 *   X X X X -> X X X X
+				 */
+				cur = (cur & ~(TILE_MASK << shift)) | ((tile + 1) << shift);
+				cur = shiftingLine(cur, shift + TILE_BITS);
+			}
+		}
+		
+		// Store result of shift
+		shiftTable[line] = cur;
 	}
-	for(; GET_SHIFT_COL(dst) != 3; dst = MAKE_LEFT(dst)) {
-		grid = applyingTile(grid, dst, TILE_EMPTY);
-	}
-	return grid;
+}
+
+
+static inline uint16_t reversingLine(uint16_t line) {
+	line = ((line & 0x00ff) << 8) | ((line & 0xff00) >> 8);
+	line = ((line & 0x0f0f) << 4) | ((line & 0xf0f0) >> 4);
+	return line;
 }
 
 
 static inline CompressedGrid shiftingTilesUp(CompressedGrid grid) {
-	// Iterate through each tile from top to bottom and then left to right within each row
-	for(int shift = MAKE_SHIFT(0, 0); GET_SHIFT_ROW(shift) != 3; shift = MAKE_RIGHT(shift)) {
-		// First skip past empty spaces
-		unsigned tile = EXTRACT_TILE(grid, shift);
-		if(tile == TILE_EMPTY) {
-			/*
-			 *   X 0 0 X -> X A 0 X
-			 *   X 0 0 X -> X A 0 X
-			 *   X A 0 X -> X 0 0 X
-			 *   X A 0 X -> X 0 0 X
-			 */
-			
-			// Count how many zeros we're shifting past
-			int delta_shift = MAKE_ROW_SHIFT(1);
-			while(GET_SHIFT_ROW(shift + delta_shift) != 0
-			      && EXTRACT_TILE(grid, shift + delta_shift) == TILE_EMPTY
-			) {
-				delta_shift += MAKE_ROW_SHIFT(1);
-			}
-			
-			// Make sure it's not just an entire line of zeros
-			if(GET_SHIFT_ROW(shift + delta_shift) != 0) {
-				grid = shiftingColumnUp(grid, shift, delta_shift);
-			}
-		}
+	for(unsigned col = 0; col < 4; col++) {
+		grid = settingColumn(grid, col, Board::shiftTable[extractCol(grid, col)]);
 	}
-	
-	// Now try to merge tiles
-	for(int shift = MAKE_SHIFT(0, 0); GET_SHIFT_ROW(shift) != 3; shift = MAKE_RIGHT(shift)) {
-		unsigned tile = EXTRACT_TILE(grid, shift);
-		if(tile != TILE_EMPTY && tile == EXTRACT_TILE(grid, MAKE_DOWN(shift))) {
-			/*
-			 *   X A A X -> X B B X
-			 *   X A A X -> X B B X
-			 *   X B A X -> X C 0 X
-			 *   X C A X -> X 0 0 X
-			 */
-			grid = applyingTile(grid, shift, tile + 1);
-			grid = shiftingColumnUp(grid, MAKE_DOWN(shift));
-		}
-	}
-	
 	return grid;
 }
 
 
 static inline CompressedGrid shiftingTilesDown(CompressedGrid grid) {
-	// Iterate through each tile from bottom to top and then right to left within each row
-	for(int shift = MAKE_SHIFT(3, 3); GET_SHIFT_ROW(shift) != 0; shift = MAKE_LEFT(shift)) {
-		// First skip past empty spaces
-		unsigned tile = EXTRACT_TILE(grid, shift);
-		if(tile == TILE_EMPTY) {
-			/*
-			 *   X A 0 X -> X 0 0 X
-			 *   X B 0 X -> X A 0 X
-			 *   X C 0 X -> X B 0 X
-			 *   X 0 0 X -> X C 0 X
-			 */
-			
-			// Count how many zeros we're shifting past
-			int delta_shift = MAKE_ROW_SHIFT(1);
-			while(GET_SHIFT_ROW(shift - delta_shift) != 3
-			      && EXTRACT_TILE(grid, shift - delta_shift) == TILE_EMPTY
-			) {
-				delta_shift += MAKE_ROW_SHIFT(1);
-			}
-			
-			// Make sure it's not just an entire line of zeros
-			if(GET_SHIFT_ROW(shift - delta_shift) != 3) {
-				grid = shiftingColumnDown(grid, shift, delta_shift);
-			}
-		}
+	for(unsigned col = 0; col < 4; col++) {
+		grid = settingColumn(grid, col, reversingLine(Board::shiftTable[reversingLine(extractCol(grid, col))]));
 	}
-	
-	// Now try to merge tiles
-	for(int shift = MAKE_SHIFT(3, 3); GET_SHIFT_ROW(shift) != 0; shift = MAKE_LEFT(shift)) {
-		unsigned tile = EXTRACT_TILE(grid, shift);
-		if(tile != TILE_EMPTY && tile == EXTRACT_TILE(grid, MAKE_UP(shift))) {
-			/*
-			 *   X A A X -> X 0 0 X
-			 *   X B A X -> X A 0 X
-			 *   X C A X -> X B B X
-			 *   X C A X -> X D B X
-			 */
-			grid = applyingTile(grid, shift, tile + 1);
-			grid = shiftingColumnDown(grid, MAKE_UP(shift));
-		}
-	}
-	
 	return grid;
 }
 
 static inline CompressedGrid shiftingTilesLeft(CompressedGrid grid) {
-	// Iterate through each tile from top to bottom and then left to right within each row
-	for(int shift = MAKE_SHIFT(0, 0); shift <= MAKE_SHIFT(3, 3); shift = MAKE_RIGHT(shift)) {
-		// Only run for tiles in the left three columns
-		if(GET_SHIFT_COL(shift) == 3) {
-			continue;
-		}
-		
-		// First skip past empty spaces
-		unsigned tile = EXTRACT_TILE(grid, shift);
-		if(tile == TILE_EMPTY) {
-			/*
-			 *   X X X X -> X X X X
-			 *   0 0 0 0 -> 0 0 0 0
-			 *   0 0 A B -> A B 0 0
-			 *   X X X X -> X X X X
-			 */
-			
-			// Count how many zeros we're shifting past
-			int delta_shift = MAKE_COL_SHIFT(1);
-			while(GET_SHIFT_COL(shift + delta_shift) != 0
-			      && EXTRACT_TILE(grid, shift + delta_shift) == TILE_EMPTY
-			) {
-				delta_shift += MAKE_COL_SHIFT(1);
-			}
-			
-			// Make sure it's not just an entire line of zeros
-			if(GET_SHIFT_COL(shift + delta_shift) != 0) {
-				grid = shiftingRowLeft(grid, shift, delta_shift);
-			}
-		}
+	for(unsigned row = 0; row < 4; row++) {
+		grid = settingRow(grid, row, Board::shiftTable[extractRow(grid, row)]);
 	}
-	
-	// Now try to merge tiles
-	for(int shift = MAKE_SHIFT(0, 0); shift <= MAKE_SHIFT(3, 3); shift = MAKE_RIGHT(shift)) {
-		// Only run for tiles in the left three columns
-		if(GET_SHIFT_COL(shift) == 3) {
-			continue;
-		}
-		
-		unsigned tile = EXTRACT_TILE(grid, shift);
-		if(tile != TILE_EMPTY && tile == EXTRACT_TILE(grid, MAKE_RIGHT(shift))) {
-			/*
-			 *   X X X X -> X X X X
-			 *   A A A A -> B B 0 0
-			 *   A A B C -> B B C 0
-			 *   X X X X -> X X X X
-			 */
-			grid = applyingTile(grid, shift, tile + 1);
-			grid = shiftingRowLeft(grid, MAKE_RIGHT(shift));
-		}
-	}
-	
 	return grid;
 }
 
 
 static inline CompressedGrid shiftingTilesRight(CompressedGrid grid) {
-	// Iterate through each tile from bottom to top and then right to left within each row
-	for(int shift = MAKE_SHIFT(3, 3); shift >= MAKE_SHIFT(0, 0); shift = MAKE_LEFT(shift)) {
-		// Only run for tiles in the right three columns
-		if(GET_SHIFT_COL(shift) == 0) {
-			continue;
-		}
-		
-		// First skip past empty spaces
-		unsigned tile = EXTRACT_TILE(grid, shift);
-		if(tile == TILE_EMPTY) {
-			/*
-			 *   X X X X -> X X X X
-			 *   0 0 0 0 -> 0 0 0 0
-			 *   A B 0 0 -> 0 0 A B
-			 *   X X X X -> X X X X
-			 */
-			
-			// Count how many zeros we're shifting past
-			int delta_shift = MAKE_COL_SHIFT(1);
-			while(GET_SHIFT_COL(shift - delta_shift) != 3
-			      && EXTRACT_TILE(grid, shift - delta_shift) == TILE_EMPTY
-			) {
-				delta_shift += MAKE_COL_SHIFT(1);
-			}
-			
-			// Make sure it's not just an entire line of zeros
-			if(GET_SHIFT_COL(shift - delta_shift) != 3) {
-				grid = shiftingRowRight(grid, shift, delta_shift);
-			}
-		}
+	for(unsigned row = 0; row < 4; row++) {
+		grid = settingRow(grid, row, reversingLine(Board::shiftTable[reversingLine(extractRow(grid, row))]));
 	}
-	
-	// Now try to merge tiles
-	for(int shift = MAKE_SHIFT(3, 3); shift >= MAKE_SHIFT(0, 0); shift = MAKE_LEFT(shift)) {
-		// Only run for tiles in the right three columns
-		if(GET_SHIFT_COL(shift) == 0) {
-			continue;
-		}
-		
-		unsigned tile = EXTRACT_TILE(grid, shift);
-		if(tile != TILE_EMPTY && tile == EXTRACT_TILE(grid, MAKE_LEFT(shift))) {
-			/*
-			 *   X X X X -> X X X X
-			 *   A A A A -> 0 0 B B
-			 *   A B C C -> 0 A B D
-			 *   X X X X -> X X X X
-			 */
-			grid = applyingTile(grid, shift, tile + 1);
-			grid = shiftingRowRight(grid, MAKE_LEFT(shift));
-		}
-	}
-	
 	return grid;
 }
 
@@ -479,139 +321,7 @@ void Board::print() const {
 }
 
 
-//static inline void getLargestTiles(
-//	CompressedGrid grid,
-//	unsigned* row1,
-//	unsigned* col1,
-//	Tile* tile1,
-//	unsigned* row2,
-//	unsigned* col2,
-//	Tile* tile2
-//) {
-//	unsigned r1, c1, r2, c2;
-//	r1 = c1 = r2 = c2 = 0;
-//	Tile big1 = TILE_EMPTY, big2 = TILE_EMPTY;
-//	for(int shift = MAKE_SHIFT(0, 0); shift <= MAKE_SHIFT(3, 3); shift = MAKE_RIGHT(shift)) {
-//		Tile cur = EXTRACT_TILE(grid, shift);
-//		if(cur >= big1) {
-//			r2 = GET_SHIFT_ROW(shift);
-//			c2 = GET_SHIFT_COL(shift);
-//			big2 = cur;
-//		}
-//		if(cur > big1) {
-//			r1 = GET_SHIFT_ROW(shift);
-//			c1 = GET_SHIFT_COL(shift);
-//			big1 = cur;
-//		}
-//	}
-//
-//	*row1 = r1;
-//	*col1 = c1;
-//	*tile1 = big1;
-//	*row2 = r2;
-//	*col2 = c2;
-//	*tile2 = big2;
-//}
-
-
-//static inline CompressedGrid rotateGrid(CompressedGrid grid) {
-//	CompressedGrid ret = GRID_EMPTY;
-//	for(int r = 0; r < 4; r++) {
-//		for(int c = 0; c < 4; c++) {
-//			Tile tile = GET_TILE(grid, r, c);
-//			ret = settingTile(ret, c, 4 - r - 1, tile);
-//		}
-//	}
-//	return ret;
-//}
-
-
-//static inline CompressedGrid mirrorHorizontally(CompressedGrid grid) {
-//	CompressedGrid l = grid & 0xff00ff00ff00ff00;
-//	CompressedGrid r = grid & 0x00ff00ff00ff00ff;
-//	grid = (r << 8) | (l >> 8);
-//
-//	l = grid & 0xf0f0f0f0f0f0f0f0;
-//	r = grid & 0x0f0f0f0f0f0f0f0f;
-//	grid = (r << 4) | (l >> 4);
-//
-//	return grid;
-//}
-
-
-//static inline CompressedGrid mirrorVertically(CompressedGrid grid) {
-//	CompressedGrid u = grid & 0xffffffff00000000;
-//	CompressedGrid d = grid & 0x00000000ffffffff;
-//	grid = (d << 32) | (u >> 32);
-//
-//	u = grid & 0xffff0000ffff0000;
-//	d = grid & 0x0000ffff0000ffff;
-//	grid = (d << 16) | (u >> 16);
-//
-//	return grid;
-//}
-
-
-//static inline CompressedGrid transpose(CompressedGrid grid) {
-//	// Before: 0123_4567_89ab_cdef
-//	// After:  048c_159d_26ae_37bf
-//	CompressedGrid ret = GRID_EMPTY;
-//	for(int i = 0; i < 4; i++) {
-//		for(int j = 0; j < 4; j++) {
-//			ret = settingTile(ret, j, i, GET_TILE(grid, i, j));
-//		}
-//	}
-//	return ret;
-//}
-
-
-//static inline CompressedGrid getCanonicalGrid(CompressedGrid grid) {
-//	// Of the 8 equivalent layouts, we need to decide on one
-//	Tile tile1, tile2;
-//	unsigned row1, col1, row2, col2;
-//	getLargestTiles(grid, &row1, &col1, &tile1, &row2, &col2, &tile2);
-//
-//	// Criteria 1: Largest tile should be in upper left quadrant
-//	if(row1 > 1) {
-//		grid = mirrorVertically(grid);
-//		row1 = 3 - row1;
-//		row2 = 3 - row2;
-//	}
-//	if(col1 > 1) {
-//		grid = mirrorHorizontally(grid);
-//		col1 = 3 - col1;
-//		col2 = 3 - col2;
-//	}
-//
-//	// Criteria 2: Second largest tile should be as high as possible
-//	if(col2 < row2) {
-//		grid = transpose(grid);
-//		unsigned tmp = row2;
-//		row2 = col2;
-//		col2 = tmp;
-//	}
-//	else if(col2 == row2) {
-//		// Tie breaker: Go through one tile at a time. First to be larger is the winner
-//		CompressedGrid gridT = transpose(grid);
-//		for(int shift = MAKE_SHIFT(0, 0); shift <= MAKE_SHIFT(3, 3); shift = MAKE_RIGHT(shift)) {
-//			tile1 = EXTRACT_TILE(grid, shift);
-//			tile2 = EXTRACT_TILE(gridT, shift);
-//			if(tile1 > tile2) {
-//				break;
-//			}
-//			else if(tile2 > tile1) {
-//				// GridT is better
-//				grid = gridT;
-//				break;
-//			}
-//		}
-//	}
-//
-//	return grid;
-//}
-
-
-static inline int scoreLine(uint_fast8_t* row, Tile biggest) {
+static inline int scoreLine(uint_fast8_t* row) {
 	int score = 0;
 	
 	// Find biggest tile and its index in the line
@@ -634,11 +344,6 @@ static inline int scoreLine(uint_fast8_t* row, Tile biggest) {
 	if(bigIdx == 0 || bigIdx == 3) {
 		score += 2400;
 	}
-	if(big == biggest) {
-		if(bigIdx == 1 || bigIdx == 2) {
-			score -= 1000;
-		}
-	}
 	
 	// Check for tiles that can almost be merged
 	for(int i = 0; i < 3; i++) {
@@ -658,50 +363,23 @@ static inline int scoreLine(uint_fast8_t* row, Tile biggest) {
 }
 
 
-static inline int scoreLayout(CompressedGrid grid) {
-	int score = 0;
-	uint_fast8_t line[4];
-	
-	// Find largest tile on the board
-	Tile biggest = TILE_EMPTY;
-	for(CompressedGrid tmp = grid; tmp; tmp >>= MAKE_COL_SHIFT(1)) {
-		Tile cur = tmp & TILE_MASK;
-		if(cur > biggest) {
-			biggest = cur;
-		}
-	}
-	
-	// Score horizontal stripes
-	for(int r = 0; r < 4; r++) {
-		for(int c = 0; c < 4; c++) {
-			line[c] = GET_TILE(grid, r, c);
-			if(line[c] != TILE_EMPTY) {
-				++line[c];
+void Board::fillScoreTable() {
+	for(uint32_t line = 0; line < 65536; line++) {
+		uint16_t cur = line;
+		
+		// Build an array for the scoring function
+		uint_fast8_t slots[4];
+		for(int i = 0; i < 4; i++) {
+			slots[i] = cur & TILE_MASK;
+			if(slots[i] != TILE_EMPTY) {
+				++slots[i];
 			}
+			cur >>= TILE_BITS;
 		}
-		int lineScore = scoreLine(line, biggest);
-		if(r == 0 || r == 3) {
-			lineScore *= 5;
-		}
-		score += lineScore;
+		
+		// Score the slots and save it in the table
+		scoreTable[line] = scoreLine(slots);
 	}
-	
-	// Score vertical stripes
-	for(int c = 0; c < 4; c++) {
-		for(int r = 0; r < 4; r++) {
-			line[r] = GET_TILE(grid, r, c);
-			if(line[r] != TILE_EMPTY) {
-				++line[r];
-			}
-		}
-		int lineScore = scoreLine(line, biggest);
-		if(c == 0 || c == 3) {
-			lineScore *= 5;
-		}
-		score += lineScore;
-	}
-	
-	return score;
 }
 
 
@@ -710,12 +388,22 @@ int Board::estimateScore() const {
 		return -999999;
 	}
 	
-	int best = INT_MIN;
-	int score = scoreLayout(mCompressedGrid);
-	if(score > best) {
-		best = score;
+	CompressedGrid grid = mCompressedGrid;
+	int score = 0;
+	
+	// Score horizontal stripes
+	for(int r = 0; r < 4; r++) {
+		int rowScore = Board::scoreTable[extractRow(grid, r)];
+		score += rowScore;
 	}
-	return best;
+	
+	// Score vertical stripes
+	for(int c = 0; c < 4; c++) {
+		int colScore = Board::scoreTable[extractCol(grid, c)];
+		score += colScore;
+	}
+	
+	return score;
 }
 
 

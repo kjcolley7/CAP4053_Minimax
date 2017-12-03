@@ -15,7 +15,7 @@
 
 
 Level::Level(sf::RenderTarget& target)
-: mCanvas(target), mTextures(std::make_shared<TextureAtlas>(resourcePath() + "sprites.pack")) {
+: mCanvas(target), mTextures(std::make_shared<TextureAtlas>(resourcePath() + "sprites.pack")), mAIEnabled(false) {
 	// Load font
 	mFont = std::make_shared<sf::Font>();
 	if(!mFont->loadFromFile(resourcePath() + "ClearSans-Bold.ttf")) {
@@ -48,7 +48,7 @@ Level::Level(sf::RenderTarget& target)
 }
 
 void Level::update(float deltaTime) {
-	if(!mBoard->checkGameOver()) {
+	if(mAIEnabled && !mBoard->checkGameOver()) {
 		bool didMove = mBoard->shiftTiles(mMinimax->getBestMove());
 		if(didMove) {
 			unsigned row, col;
@@ -100,6 +100,13 @@ void Level::keyPressed(sf::Keyboard::Key key) {
 			mMinimax->setBoard(*mBoard);
 			break;
 		
+		case sf::Keyboard::Space:
+			mAIEnabled = !mAIEnabled;
+			if(mAIEnabled) {
+				mMinimax->setBoard(*mBoard);
+			}
+			break;
+		
 		default:
 			break;
 	}
@@ -108,7 +115,9 @@ void Level::keyPressed(sf::Keyboard::Key key) {
 		unsigned row, col;
 		Tile tile;
 		mBoard->placeRandom(&row, &col, &tile);
-		mMinimax->placedTile(row, col, tile);
+		if(mAIEnabled) {
+			mMinimax->placedTile(row, col, tile);
+		}
 		mBoard->print();
 		if(mBoard->isGameOver()) {
 			std::cout << "Game over!" << std::endl;

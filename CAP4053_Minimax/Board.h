@@ -36,6 +36,11 @@ typedef uint_fast8_t Tile;
 
 class Board {
 public:
+	static uint16_t shiftTable[65536];
+	static int scoreTable[65536];
+	static void fillShiftTable();
+	static void fillScoreTable();
+	
 	Board();
 	
 	void placeTile(Tile tile, unsigned row, unsigned col);
