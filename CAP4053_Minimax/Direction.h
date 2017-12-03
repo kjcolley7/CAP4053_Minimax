@@ -9,7 +9,9 @@
 #ifndef MM_DIRECTION_H
 #define MM_DIRECTION_H
 
-enum class Direction {
+#include <cstdint>
+
+enum class Direction: uint_fast8_t {
 	UP, DOWN, LEFT, RIGHT
 };
 

@@ -9,11 +9,40 @@
 #include "ShiftNode.h"
 #include "PlaceNode.h"
 #include <climits>
+#include <cstring>
 
+
+const PlaceNode* ShiftNode::kEmptyChildren[4] = {};
+
+std::queue<ShiftNode*> ShiftNode::sPool;
+
+
+ShiftNode* ShiftNode::allocate(Board initBoard) {
+	if(!sPool.empty()) {
+		ShiftNode* ret = sPool.front();
+		sPool.pop();
+		ret->init(initBoard);
+		return ret;
+	}
+	
+	return new ShiftNode(initBoard);
+}
 
 ShiftNode::ShiftNode(Board initBoard)
-: mBoard(initBoard), mUpChild(nullptr), mDownChild(nullptr), mLeftChild(nullptr), mRightChild(nullptr) { }
+: mBoard(initBoard) {
+	init(initBoard);
+}
 
+
+void ShiftNode::init(Board initBoard) {
+	mBoard = initBoard;
+	memset(mChildren, 0, sizeof(mChildren));
+}
+
+
+void ShiftNode::deallocate() {
+	sPool.push(this);
+}
 
 
 void ShiftNode::setBoard(Board newBoard) {
@@ -23,16 +52,11 @@ void ShiftNode::setBoard(Board newBoard) {
 
 
 PlaceNode* ShiftNode::getChild(Direction dir) {
-	if(!(mUpChild || mDownChild || mLeftChild || mRightChild)) {
+	if(memcmp(mChildren, kEmptyChildren, sizeof(mChildren)) == 0) {
 		populateChildren();
 	}
 	
-	switch(dir) {
-		case Direction::UP: return mUpChild;
-		case Direction::DOWN: return mDownChild;
-		case Direction::LEFT: return mLeftChild;
-		case Direction::RIGHT: return mRightChild;
-	}
+	return mChildren[(int)dir];
 }
 
 
@@ -41,93 +65,54 @@ void ShiftNode::prune(ShiftNode* newHead) {
 		return;
 	}
 	
-	if(mUpChild) {
-		mUpChild->prune(newHead);
-		delete mUpChild;
-		mUpChild = nullptr;
-	}
-	
-	if(mDownChild) {
-		mDownChild->prune(newHead);
-		delete mDownChild;
-		mDownChild = nullptr;
-	}
-	
-	if(mLeftChild) {
-		mLeftChild->prune(newHead);
-		delete mLeftChild;
-		mLeftChild = nullptr;
-	}
-	
-	if(mRightChild) {
-		mRightChild->prune(newHead);
-		delete mRightChild;
-		mRightChild = nullptr;
+	for(int i = 0; i < 4; i++) {
+		if(mChildren[i]) {
+			mChildren[i]->prune(newHead);
+			mChildren[i]->deallocate();
+			mChildren[i] = nullptr;
+		}
 	}
 }
 
 
 void ShiftNode::populateChildren() {
-	Board up, down, left, right;
-	mBoard.allShifts(&up, &down, &left, &right);
+	Board shifts[4];
+	mBoard.allShifts(shifts);
 	
-	if(!up.isEmpty()) {
-		mUpChild = new PlaceNode(up);
-	}
-	
-	if(!down.isEmpty()) {
-		mDownChild = new PlaceNode(down);
-	}
-	
-	if(!left.isEmpty()) {
-		mLeftChild = new PlaceNode(left);
-	}
-	
-	if(!right.isEmpty()) {
-		mRightChild = new PlaceNode(right);
+	for(int i = 0; i < 4; i++) {
+		if(!shifts[i].isEmpty()) {
+			mChildren[i] = PlaceNode::allocate(shifts[i]);
+		}
 	}
 }
 
 
 // Smaller stack frame
-int ShiftNode::getMaxScore(unsigned depth) {
+int ShiftNode::getMaxScore(unsigned depth, int alpha, int beta) {
 	if(depth == 0) {
 		return mBoard.estimateScore();
 	}
 	
 	// Populate children if they haven't been yet
-	if(!(mUpChild || mDownChild || mLeftChild || mRightChild)) {
+	if(memcmp(mChildren, kEmptyChildren, sizeof(mChildren)) == 0) {
 		populateChildren();
 	}
 	
 	int score, maxScore = INT_MIN;
 	
 	// Score children
-	if(mUpChild) {
-		score = mUpChild->getMinScore(depth - 1);
-		if(score > maxScore) {
-			maxScore = score;
-		}
-	}
-	
-	if(mDownChild) {
-		score = mDownChild->getMinScore(depth - 1);
-		if(score > maxScore) {
-			maxScore = score;
-		}
-	}
-	
-	if(mLeftChild) {
-		score = mLeftChild->getMinScore(depth - 1);
-		if(score > maxScore) {
-			maxScore = score;
-		}
-	}
-	
-	if(mRightChild) {
-		score = mRightChild->getMinScore(depth - 1);
-		if(score > maxScore) {
-			maxScore = score;
+	for(int i = 0; i < 4; i++) {
+		if(mChildren[i]) {
+			score = mChildren[i]->getMinScore(depth - 1, alpha, beta);
+			if(score > maxScore) {
+				maxScore = score;
+			}
+			if(maxScore > alpha) {
+				alpha = maxScore;
+			}
+			if(alpha >= beta) {
+				return maxScore;
+			}
 		}
 	}
 	
@@ -135,13 +120,13 @@ int ShiftNode::getMaxScore(unsigned depth) {
 }
 
 
-int ShiftNode::getMaxScore(unsigned depth, Direction* dir) {
+int ShiftNode::getMaxScore(unsigned depth, int alpha, int beta, Direction* dir) {
 	if(depth == 0) {
 		return mBoard.estimateScore();
 	}
 	
 	// Populate children if they haven't been yet
-	if(!(mUpChild || mDownChild || mLeftChild || mRightChild)) {
+	if(memcmp(mChildren, kEmptyChildren, sizeof(mChildren)) == 0) {
 		populateChildren();
 	}
 	
@@ -149,50 +134,29 @@ int ShiftNode::getMaxScore(unsigned depth, Direction* dir) {
 	Direction maxDir;
 	
 	// Score children
-	if(mUpChild) {
-		score = mUpChild->getMinScore(depth - 1);
-		if(score > maxScore) {
-			maxScore = score;
-			maxDir = Direction::UP;
+	for(int i = 0; i < 4; i++) {
+		if(mChildren[i]) {
+			score = mChildren[i]->getMinScore(depth - 1, alpha, beta);
+			if(score > maxScore) {
+				maxScore = score;
+				maxDir = (Direction)i;
+			}
+			if(maxScore > alpha) {
+				alpha = maxScore;
+			}
+			if(alpha >= beta) {
+				return maxScore;
+			}
 		}
 	}
 	
-	if(mDownChild) {
-		score = mDownChild->getMinScore(depth - 1);
-		if(score > maxScore) {
-			maxScore = score;
-			maxDir = Direction::DOWN;
-		}
-	}
-	
-	if(mLeftChild) {
-		score = mLeftChild->getMinScore(depth - 1);
-		if(score > maxScore) {
-			maxScore = score;
-			maxDir = Direction::LEFT;
-		}
-	}
-	
-	if(mRightChild) {
-		score = mRightChild->getMinScore(depth - 1);
-		if(score > maxScore) {
-			maxScore = score;
-			maxDir = Direction::RIGHT;
-		}
-	}
-	
+	// All directions score as INT_MIN, so just pick any one which is nonnull
 	if(maxScore == INT_MIN) {
-		if(mUpChild) {
-			maxDir = Direction::UP;
-		}
-		else if(mDownChild) {
-			maxDir = Direction::DOWN;
-		}
-		else if(mLeftChild) {
-			maxDir = Direction::LEFT;
-		}
-		else if(mRightChild) {
-			maxDir = Direction::RIGHT;
+		for(int i = 0; i < 4; i++) {
+			if(mChildren[i]) {
+				maxDir = (Direction)i;
+				break;
+			}
 		}
 	}
 	
