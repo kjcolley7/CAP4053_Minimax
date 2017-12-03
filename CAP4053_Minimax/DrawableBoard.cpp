@@ -170,7 +170,7 @@ sf::Vector2f DrawableBoard::getSlotPosition(unsigned row, unsigned col) const {
 
 void DrawableBoard::tryAgain() {
 	mIsGameOver = false;
-	mCompressedGrid = 0;
+	mCompressedGrid = GRID_EMPTY;
 	placeRandom();
 	placeRandom();
 }
