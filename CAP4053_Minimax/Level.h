@@ -80,6 +80,7 @@ private:
 	std::shared_ptr<sf::Font> mFont;
 	std::shared_ptr<DrawableBoard> mBoard;
 	sf::Text mTitle;
+	sf::Text mInstructions;
 	std::unique_ptr<BoardTree> mMinimax;
 	bool mAIEnabled;
 };

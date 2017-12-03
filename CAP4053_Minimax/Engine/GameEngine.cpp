@@ -66,7 +66,7 @@ int GameEngine::run() {
 		mLevel.draw(deltaTime);
 		
 		mWindow.display();
-		mWindow.clear(sf::Color::White);
+		mWindow.clear({250, 248, 240});
 	}
 	
 	return 0;

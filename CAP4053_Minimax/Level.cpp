@@ -35,16 +35,29 @@ Level::Level(sf::RenderTarget& target)
 	float halfBoard = mBoard->kBoardWidth / 2.0f;
 	mBoard->setCenter({600 / 2.0f, 800 - distanceToEdge - halfBoard});
 	
-	// Create text object
+	// Create text objects
 	mTitle.setFont(*mFont);
 	mTitle.setString("2048 AI");
 	mTitle.setCharacterSize(80);
 	mTitle.setFillColor({119, 110, 101});
 	
-	// Position text object
+	mInstructions.setFont(*mFont);
+	mInstructions.setString(
+		"Press SPACE to toggle the AI\n"
+		"Controls are arrow keys, WASD, or HJKL\n"
+		"Press R to restart the game"
+	);
+	mInstructions.setCharacterSize(24);
+	mInstructions.setFillColor({119, 110, 101});
+	
+	// Position text objects
 	sf::FloatRect titleBox = mTitle.getLocalBounds();
-	mTitle.setOrigin(titleBox.left + titleBox.width / 2.0f, 0);
-	mTitle.setPosition(600 / 2.0f, 0);
+	mTitle.setOrigin(titleBox.left + titleBox.width / 2.0f, 0.0f);
+	mTitle.setPosition(600 / 2.0f, 0.0f);
+	
+	sf::FloatRect instructionsBox = mInstructions.getLocalBounds();
+	mInstructions.setOrigin(instructionsBox.left + instructionsBox.width / 2.0f, 0.0f);
+	mInstructions.setPosition(600 / 2.0f, titleBox.top + titleBox.height + 50.0f);
 }
 
 void Level::update(float deltaTime) {
@@ -65,6 +78,7 @@ void Level::update(float deltaTime) {
 
 void Level::draw(float deltaTime) {
 	mCanvas.draw(mTitle);
+	mCanvas.draw(mInstructions);
 	mBoard->draw(mCanvas);
 }
 
