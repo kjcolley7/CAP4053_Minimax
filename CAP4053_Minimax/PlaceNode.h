@@ -9,6 +9,7 @@
 #ifndef MM_PLACENODE_H
 #define MM_PLACENODE_H
 
+#include <queue>
 #include "Board.h"
 
 class ShiftNode;
@@ -16,14 +17,20 @@ class ShiftNode;
 // This represents a minimizing node
 class PlaceNode {
 public:
+	static PlaceNode* allocate(Board initBoard);
+	
 	PlaceNode(Board initBoard);
+	void init(Board initBoard);
+	void deallocate();
 	
 	ShiftNode* getChild(unsigned row, unsigned col, Tile tile);
 	void prune(ShiftNode* newHead);
-	int getMinScore(unsigned depth);
+	int getMinScore(unsigned depth, int alpha, int beta);
 	
 private:
 	void populateChildren();
+	
+	static std::queue<PlaceNode*> sPool;
 	
 	ShiftNode* mChildren[16][2];
 	Board mBoard;

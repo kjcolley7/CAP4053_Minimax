@@ -13,11 +13,19 @@
 #include "BoardPrivate.h"
 
 
+static inline CompressedGrid insertingTile(CompressedGrid grid, int shift, CompressedGrid tile) {
+	return grid | (tile << shift);
+}
+
+static inline CompressedGrid placingTile(CompressedGrid grid, unsigned row, unsigned col, CompressedGrid tile) {
+	return insertingTile(grid, MAKE_SHIFT(row, col), tile);
+}
+
 static inline CompressedGrid applyingTile(CompressedGrid grid, int shift, CompressedGrid tile) {
 	return ((grid & ~(TILE_MASK << shift)) | (tile << shift));
 }
 
-static inline CompressedGrid settingTile(CompressedGrid grid, unsigned row, unsigned col, int tile) {
+static inline CompressedGrid settingTile(CompressedGrid grid, unsigned row, unsigned col, CompressedGrid tile) {
 	return applyingTile(grid, MAKE_SHIFT(row, col), tile);
 }
 
@@ -129,7 +137,7 @@ static inline CompressedGrid shiftingTilesUp(CompressedGrid grid) {
 	}
 	
 	// Now try to merge tiles
-	for(int shift = MAKE_SHIFT(0, 0); shift < MAKE_SHIFT(3, 0); shift = MAKE_RIGHT(shift)) {
+	for(int shift = MAKE_SHIFT(0, 0); GET_SHIFT_ROW(shift) != 3; shift = MAKE_RIGHT(shift)) {
 		unsigned tile = EXTRACT_TILE(grid, shift);
 		if(tile != TILE_EMPTY && tile == EXTRACT_TILE(grid, MAKE_DOWN(shift))) {
 			/*
@@ -149,7 +157,7 @@ static inline CompressedGrid shiftingTilesUp(CompressedGrid grid) {
 
 static inline CompressedGrid shiftingTilesDown(CompressedGrid grid) {
 	// Iterate through each tile from bottom to top and then right to left within each row
-	for(int shift = MAKE_SHIFT(3, 3); shift >= MAKE_SHIFT(0, 0); shift = MAKE_LEFT(shift)) {
+	for(int shift = MAKE_SHIFT(3, 3); GET_SHIFT_ROW(shift) != 0; shift = MAKE_LEFT(shift)) {
 		// First skip past empty spaces
 		unsigned tile = EXTRACT_TILE(grid, shift);
 		if(tile == TILE_EMPTY) {
@@ -176,7 +184,7 @@ static inline CompressedGrid shiftingTilesDown(CompressedGrid grid) {
 	}
 	
 	// Now try to merge tiles
-	for(int shift = MAKE_SHIFT(3, 3); shift >= MAKE_SHIFT(0, 0); shift = MAKE_LEFT(shift)) {
+	for(int shift = MAKE_SHIFT(3, 3); GET_SHIFT_ROW(shift) != 0; shift = MAKE_LEFT(shift)) {
 		unsigned tile = EXTRACT_TILE(grid, shift);
 		if(tile != TILE_EMPTY && tile == EXTRACT_TILE(grid, MAKE_UP(shift))) {
 			/*
@@ -195,7 +203,7 @@ static inline CompressedGrid shiftingTilesDown(CompressedGrid grid) {
 
 static inline CompressedGrid shiftingTilesLeft(CompressedGrid grid) {
 	// Iterate through each tile from top to bottom and then left to right within each row
-	for(int shift = MAKE_SHIFT(0, 0); shift < MAKE_SHIFT(4, 0); shift = MAKE_RIGHT(shift)) {
+	for(int shift = MAKE_SHIFT(0, 0); shift <= MAKE_SHIFT(3, 3); shift = MAKE_RIGHT(shift)) {
 		// Only run for tiles in the left three columns
 		if(GET_SHIFT_COL(shift) == 3) {
 			continue;
@@ -227,7 +235,7 @@ static inline CompressedGrid shiftingTilesLeft(CompressedGrid grid) {
 	}
 	
 	// Now try to merge tiles
-	for(int shift = MAKE_SHIFT(0, 0); shift < MAKE_SHIFT(4, 0); shift = MAKE_RIGHT(shift)) {
+	for(int shift = MAKE_SHIFT(0, 0); shift <= MAKE_SHIFT(3, 3); shift = MAKE_RIGHT(shift)) {
 		// Only run for tiles in the left three columns
 		if(GET_SHIFT_COL(shift) == 3) {
 			continue;
@@ -350,7 +358,7 @@ void Board::placeRandom(unsigned* pRow, unsigned* pCol, Tile* pTile) {
 	}
 	
 	// Set new tile
-	mCompressedGrid = applyingTile(mCompressedGrid, hole, tile);
+	mCompressedGrid = insertingTile(mCompressedGrid, hole, tile);
 }
 
 
@@ -471,79 +479,176 @@ void Board::print() const {
 }
 
 
-static inline void getLargestTiles(
-	CompressedGrid grid,
-	unsigned* row1,
-	unsigned* col1,
-	Tile* tile1,
-	unsigned* row2,
-	unsigned* col2,
-	Tile* tile2
-) {
-	unsigned r1, c1, r2, c2;
-	r1 = c1 = r2 = c2 = 0;
-	Tile big1 = TILE_EMPTY, big2 = TILE_EMPTY;
-	for(int shift = MAKE_SHIFT(0, 0); shift <= MAKE_SHIFT(3, 3); shift = MAKE_RIGHT(shift)) {
-		Tile cur = EXTRACT_TILE(grid, shift);
-		if(cur >= big1) {
-			r2 = GET_SHIFT_ROW(shift);
-			c2 = GET_SHIFT_COL(shift);
-			big2 = cur;
+//static inline void getLargestTiles(
+//	CompressedGrid grid,
+//	unsigned* row1,
+//	unsigned* col1,
+//	Tile* tile1,
+//	unsigned* row2,
+//	unsigned* col2,
+//	Tile* tile2
+//) {
+//	unsigned r1, c1, r2, c2;
+//	r1 = c1 = r2 = c2 = 0;
+//	Tile big1 = TILE_EMPTY, big2 = TILE_EMPTY;
+//	for(int shift = MAKE_SHIFT(0, 0); shift <= MAKE_SHIFT(3, 3); shift = MAKE_RIGHT(shift)) {
+//		Tile cur = EXTRACT_TILE(grid, shift);
+//		if(cur >= big1) {
+//			r2 = GET_SHIFT_ROW(shift);
+//			c2 = GET_SHIFT_COL(shift);
+//			big2 = cur;
+//		}
+//		if(cur > big1) {
+//			r1 = GET_SHIFT_ROW(shift);
+//			c1 = GET_SHIFT_COL(shift);
+//			big1 = cur;
+//		}
+//	}
+//
+//	*row1 = r1;
+//	*col1 = c1;
+//	*tile1 = big1;
+//	*row2 = r2;
+//	*col2 = c2;
+//	*tile2 = big2;
+//}
+
+
+//static inline CompressedGrid rotateGrid(CompressedGrid grid) {
+//	CompressedGrid ret = GRID_EMPTY;
+//	for(int r = 0; r < 4; r++) {
+//		for(int c = 0; c < 4; c++) {
+//			Tile tile = GET_TILE(grid, r, c);
+//			ret = settingTile(ret, c, 4 - r - 1, tile);
+//		}
+//	}
+//	return ret;
+//}
+
+
+//static inline CompressedGrid mirrorHorizontally(CompressedGrid grid) {
+//	CompressedGrid l = grid & 0xff00ff00ff00ff00;
+//	CompressedGrid r = grid & 0x00ff00ff00ff00ff;
+//	grid = (r << 8) | (l >> 8);
+//
+//	l = grid & 0xf0f0f0f0f0f0f0f0;
+//	r = grid & 0x0f0f0f0f0f0f0f0f;
+//	grid = (r << 4) | (l >> 4);
+//
+//	return grid;
+//}
+
+
+//static inline CompressedGrid mirrorVertically(CompressedGrid grid) {
+//	CompressedGrid u = grid & 0xffffffff00000000;
+//	CompressedGrid d = grid & 0x00000000ffffffff;
+//	grid = (d << 32) | (u >> 32);
+//
+//	u = grid & 0xffff0000ffff0000;
+//	d = grid & 0x0000ffff0000ffff;
+//	grid = (d << 16) | (u >> 16);
+//
+//	return grid;
+//}
+
+
+//static inline CompressedGrid transpose(CompressedGrid grid) {
+//	// Before: 0123_4567_89ab_cdef
+//	// After:  048c_159d_26ae_37bf
+//	CompressedGrid ret = GRID_EMPTY;
+//	for(int i = 0; i < 4; i++) {
+//		for(int j = 0; j < 4; j++) {
+//			ret = settingTile(ret, j, i, GET_TILE(grid, i, j));
+//		}
+//	}
+//	return ret;
+//}
+
+
+//static inline CompressedGrid getCanonicalGrid(CompressedGrid grid) {
+//	// Of the 8 equivalent layouts, we need to decide on one
+//	Tile tile1, tile2;
+//	unsigned row1, col1, row2, col2;
+//	getLargestTiles(grid, &row1, &col1, &tile1, &row2, &col2, &tile2);
+//
+//	// Criteria 1: Largest tile should be in upper left quadrant
+//	if(row1 > 1) {
+//		grid = mirrorVertically(grid);
+//		row1 = 3 - row1;
+//		row2 = 3 - row2;
+//	}
+//	if(col1 > 1) {
+//		grid = mirrorHorizontally(grid);
+//		col1 = 3 - col1;
+//		col2 = 3 - col2;
+//	}
+//
+//	// Criteria 2: Second largest tile should be as high as possible
+//	if(col2 < row2) {
+//		grid = transpose(grid);
+//		unsigned tmp = row2;
+//		row2 = col2;
+//		col2 = tmp;
+//	}
+//	else if(col2 == row2) {
+//		// Tie breaker: Go through one tile at a time. First to be larger is the winner
+//		CompressedGrid gridT = transpose(grid);
+//		for(int shift = MAKE_SHIFT(0, 0); shift <= MAKE_SHIFT(3, 3); shift = MAKE_RIGHT(shift)) {
+//			tile1 = EXTRACT_TILE(grid, shift);
+//			tile2 = EXTRACT_TILE(gridT, shift);
+//			if(tile1 > tile2) {
+//				break;
+//			}
+//			else if(tile2 > tile1) {
+//				// GridT is better
+//				grid = gridT;
+//				break;
+//			}
+//		}
+//	}
+//
+//	return grid;
+//}
+
+
+static inline int scoreLine(uint_fast8_t* row) {
+	int score = 0;
+	
+	Tile big = TILE_EMPTY;
+	int bigIdx = 0;
+	for(int i = 0; i < 4; i++) {
+		Tile cur = row[i];
+		if(cur > big) {
+			big = cur;
+			bigIdx = i;
 		}
-		if(cur > big1) {
-			r1 = GET_SHIFT_ROW(shift);
-			c1 = GET_SHIFT_COL(shift);
-			big1 = cur;
+		
+		if(cur == TILE_EMPTY) {
+			// It's good to have empty tiles
+			score += 500;
 		}
 	}
 	
-	*row1 = r1;
-	*col1 = c1;
-	*tile1 = big1;
-	*row2 = r2;
-	*col2 = c2;
-	*tile2 = big2;
-}
-
-
-static inline CompressedGrid rotateGrid(CompressedGrid grid) {
-	CompressedGrid ret = GRID_EMPTY;
-	for(int r = 0; r < 4; r++) {
-		for(int c = 0; c < 4; c++) {
-			Tile tile = GET_TILE(grid, r, c);
-			ret = settingTile(ret, c, 4 - r - 1, tile);
+	// Best if the largest tile is on the edge
+	if(bigIdx == 0 || bigIdx == 3) {
+		score += 2000;
+	}
+	
+	// Check for tiles that can almost be merged
+	for(int i = 0; i < 3; i++) {
+		if(row[i] == row[i+1] + 1 || row[i] == row[i+1] - 1) {
+			score += 100;
 		}
 	}
-	return ret;
-}
-
-
-static inline CompressedGrid mirrorGrid(CompressedGrid grid) {
-	CompressedGrid l = grid & 0xff00ff00ff00ff00;
-	CompressedGrid r = grid & 0x00ff00ff00ff00ff;
-	grid = (r << 8) | (l >> 8);
 	
-	l = grid & 0xf0f0f0f0f0f0f0f0;
-	r = grid & 0x0f0f0f0f0f0f0f0f;
-	grid = (r << 4) | (l >> 4);
+	// Check if the tiles are lined up
+	if((row[0] > row[1] && row[1] > row[2] && row[2] > row[3]) ||
+	   (row[0] < row[1] && row[1] < row[2] && row[2] < row[3])
+	) {
+		score += 1000;
+	}
 	
-	return grid;
-}
-
-
-static inline void foreachOrientation(CompressedGrid grid, std::function<void(CompressedGrid)> func) {
-	// XXX: Instead of this, it would be faster to come up with a method for deciding on a standard board layout
-	func(grid);
-	func(mirrorGrid(grid));
-	
-	func((grid = rotateGrid(grid)));
-	func(mirrorGrid(grid));
-	
-	func((grid = rotateGrid(grid)));
-	func(mirrorGrid(grid));
-	
-	func((grid = rotateGrid(grid)));
-	func(mirrorGrid(grid));
+	return score;
 }
 
 
@@ -557,28 +662,37 @@ static inline int scoreLayout(CompressedGrid grid) {
 	 * 3. Negated manhattan distance between largest tile and second largest
 	 */
 	
-	// 1. Highest tile value on the board
-	Tile tile1, tile2;
-	unsigned row1, col1, row2, col2;
-	getLargestTiles(grid, &row1, &col1, &tile1, &row2, &col2, &tile2);
-	score |= tile1;
+	uint_fast8_t line[4];
 	
-	// 2. Negated manhattan distance between largest tile and the top-left corner
-	score <<= 3;
-	score |= 0x7 - (row1 + col1);
+	// Score horizontal stripes
+	for(int r = 0; r < 4; r++) {
+		for(int c = 0; c < 4; c++) {
+			line[c] = GET_TILE(grid, r, c);
+			if(line[c] != TILE_EMPTY) {
+				++line[c];
+			}
+		}
+		int rowScore = scoreLine(line);
+		if(r == 0 || r == 3) {
+			rowScore *= 5;
+		}
+		score += rowScore;
+	}
 	
-	// 3. Negated manhattan distance between largest tile and second largest
-	score <<= 3;
-	int dr, dc;
-	dr = (int)row2 - row1;
-	if(dr < 0) {
-		dr = -dr;
+	// Score vertical stripes
+	for(int c = 0; c < 4; c++) {
+		for(int r = 0; r < 4; r++) {
+			line[r] = GET_TILE(grid, r, c);
+			if(line[r] != TILE_EMPTY) {
+				++line[r];
+			}
+		}
+		int rowScore = scoreLine(line);
+		if(c == 0 || c == 3) {
+			rowScore *= 5;
+		}
+		score += rowScore;
 	}
-	dc = (int)col2 - col1;
-	if(dc < 0) {
-		dc = -dc;
-	}
-	score |= 0x7 - (dr + dc);
 	
 	return score;
 }
@@ -590,12 +704,10 @@ int Board::estimateScore() const {
 	}
 	
 	int best = INT_MIN;
-	foreachOrientation(mCompressedGrid, [&best](CompressedGrid grid) {
-		int score = scoreLayout(grid);
-		if(score > best) {
-			best = score;
-		}
-	});
+	int score = scoreLayout(mCompressedGrid);
+	if(score > best) {
+		best = score;
+	}
 	return best;
 }
 
@@ -605,8 +717,8 @@ void Board::allPlaces(Board* places) const {
 	for(int shift = MAKE_SHIFT(0, 0); shift <= MAKE_SHIFT(3, 3); shift = MAKE_RIGHT(shift)) {
 		Tile cur = EXTRACT_TILE(grid, shift);
 		if(cur == TILE_EMPTY) {
-			places++->mCompressedGrid = settingTile(grid, GET_SHIFT_ROW(shift), GET_SHIFT_COL(shift), TILE_2);
-			places++->mCompressedGrid = settingTile(grid, GET_SHIFT_ROW(shift), GET_SHIFT_COL(shift), TILE_4);
+			places++->mCompressedGrid = insertingTile(grid, shift, TILE_2);
+			places++->mCompressedGrid = insertingTile(grid, shift, TILE_4);
 		}
 		else {
 			places++->mCompressedGrid = GRID_EMPTY;
@@ -615,26 +727,29 @@ void Board::allPlaces(Board* places) const {
 	}
 }
 
-void Board::allShifts(Board* up, Board* down, Board* left, Board* right) const {
+void Board::allShifts(Board* shifts) const {
 	CompressedGrid grid = mCompressedGrid;
-	up->mCompressedGrid = shiftingTilesUp(grid);
-	if(up->mCompressedGrid == grid) {
-		up->mCompressedGrid = GRID_EMPTY;
+	shifts->mCompressedGrid = shiftingTilesUp(grid);
+	if(shifts->mCompressedGrid == grid) {
+		shifts->mCompressedGrid = GRID_EMPTY;
 	}
 	
-	down->mCompressedGrid = shiftingTilesDown(grid);
-	if(down->mCompressedGrid == grid) {
-		down->mCompressedGrid = GRID_EMPTY;
+	++shifts;
+	shifts->mCompressedGrid = shiftingTilesDown(grid);
+	if(shifts->mCompressedGrid == grid) {
+		shifts->mCompressedGrid = GRID_EMPTY;
 	}
 	
-	left->mCompressedGrid = shiftingTilesLeft(grid);
-	if(left->mCompressedGrid == grid) {
-		left->mCompressedGrid = GRID_EMPTY;
+	++shifts;
+	shifts->mCompressedGrid = shiftingTilesLeft(grid);
+	if(shifts->mCompressedGrid == grid) {
+		shifts->mCompressedGrid = GRID_EMPTY;
 	}
 	
-	right->mCompressedGrid = shiftingTilesRight(grid);
-	if(right->mCompressedGrid == grid) {
-		right->mCompressedGrid = GRID_EMPTY;
+	++shifts;
+	shifts->mCompressedGrid = shiftingTilesRight(grid);
+	if(shifts->mCompressedGrid == grid) {
+		shifts->mCompressedGrid = GRID_EMPTY;
 	}
 }
 

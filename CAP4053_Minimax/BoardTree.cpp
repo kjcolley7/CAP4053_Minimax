@@ -10,11 +10,11 @@
 #include <iostream>
 
 
-const unsigned BoardTree::kMaximumDepth = 3;
+const unsigned BoardTree::kMaximumDepth = 5;
 
 
 BoardTree::BoardTree(Board initBoard)
-: mHead(new ShiftNode(initBoard)), mBestMove(Direction::UP) { }
+: mHead(ShiftNode::allocate(initBoard)), mBestMove(Direction::UP) { }
 
 
 
@@ -29,7 +29,7 @@ bool BoardTree::isValid() const {
 
 
 Direction BoardTree::getBestMove() {
-	int score = mHead->getMaxScore(kMaximumDepth, &mBestMove);
+	int score = mHead->getMaxScore(kMaximumDepth, INT_MIN, INT_MAX, &mBestMove);
 	char cDir;
 	switch(mBestMove) {
 		case Direction::UP:
@@ -67,6 +67,6 @@ void BoardTree::placedTile(unsigned row, unsigned col, Tile tile) {
 
 void BoardTree::updateHead(ShiftNode* newHead) {
 	mHead->prune(newHead);
-	delete mHead;
+	mHead->deallocate();
 	mHead = newHead;
 }

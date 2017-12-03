@@ -53,7 +53,7 @@ public:
 	
 	int estimateScore() const;
 	void allPlaces(Board* places) const;
-	void allShifts(Board* up, Board* down, Board* left, Board* right) const;
+	void allShifts(Board* shifts) const;
 	bool isEmpty() const;
 
 protected:

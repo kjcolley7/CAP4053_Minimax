@@ -9,6 +9,7 @@
 #ifndef MM_SHIFTNODE_H
 #define MM_SHIFTNODE_H
 
+#include <queue>
 #include "Board.h"
 
 class PlaceNode;
@@ -16,21 +17,26 @@ class PlaceNode;
 // This represents a maximizing node
 class ShiftNode {
 public:
+	static ShiftNode* allocate(Board initBoard);
+	
 	ShiftNode(Board initBoard);
+	void init(Board initBoard);
+	void deallocate();
 	
 	void setBoard(Board newBoard);
 	PlaceNode* getChild(Direction dir);
 	void prune(ShiftNode* newHead);
-	int getMaxScore(unsigned depth);
-	int getMaxScore(unsigned depth, Direction* dir);
+	int getMaxScore(unsigned depth, int alpha, int beta);
+	int getMaxScore(unsigned depth, int alpha, int beta, Direction* dir);
 	
 private:
 	void populateChildren();
 	
-	PlaceNode* mUpChild;
-	PlaceNode* mDownChild;
-	PlaceNode* mLeftChild;
-	PlaceNode* mRightChild;
+	static const PlaceNode* kEmptyChildren[4];
+	
+	static std::queue<ShiftNode*> sPool;
+	
+	PlaceNode* mChildren[4];
 	Board mBoard;
 };
 
