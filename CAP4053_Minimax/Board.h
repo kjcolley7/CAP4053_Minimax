@@ -40,7 +40,7 @@ public:
 	
 	void placeTile(Tile tile, unsigned row, unsigned col);
 	unsigned findHoles(int* holeShifts) const;
-	void placeRandom();
+	void placeRandom(unsigned* pRow = nullptr, unsigned* pCol = nullptr, Tile* pTile = nullptr);
 	
 	bool shiftTiles(Direction dir);
 	bool shiftTilesUp();
@@ -52,6 +52,9 @@ public:
 	void print() const;
 	
 	int estimateScore() const;
+	void allPlaces(Board* places) const;
+	void allShifts(Board* up, Board* down, Board* left, Board* right) const;
+	bool isEmpty() const;
 
 protected:
 	CompressedGrid mCompressedGrid;

@@ -12,10 +12,9 @@
 #include <memory>
 #include <string>
 #include <SFML/Graphics.hpp>
-
-class Level;
 #include "Engine/TextureAtlas.h"
 #include "DrawableBoard.h"
+#include "BoardTree.h"
 
 
 /**
@@ -81,6 +80,7 @@ private:
 	std::shared_ptr<sf::Font> mFont;
 	std::shared_ptr<DrawableBoard> mBoard;
 	sf::Text mTitle;
+	std::unique_ptr<BoardTree> mMinimax;
 };
 
 #endif /* MM_LEVEL_H */

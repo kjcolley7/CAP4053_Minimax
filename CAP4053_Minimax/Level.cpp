@@ -25,6 +25,10 @@ Level::Level(sf::RenderTarget& target)
 	
 	// Create the board, which will involve placing the first two random tiles
 	mBoard = std::make_shared<DrawableBoard>(mFont, mTextures);
+	mBoard->print();
+	
+	// Create AI
+	mMinimax = std::make_unique<BoardTree>(*mBoard);
 	
 	// Move the board into position (centered at the bottom of the window)
 	float distanceToEdge = (600 - mBoard->kBoardWidth) / 2.0f;
@@ -44,7 +48,19 @@ Level::Level(sf::RenderTarget& target)
 }
 
 void Level::update(float deltaTime) {
-	// Nothing to be done
+	if(!mBoard->checkGameOver()) {
+		bool didMove = mBoard->shiftTiles(mMinimax->getBestMove());
+		if(didMove) {
+			unsigned row, col;
+			Tile tile;
+			mBoard->placeRandom(&row, &col, &tile);
+			mMinimax->placedTile(row, col, tile);
+			mBoard->print();
+			if(mBoard->isGameOver()) {
+				std::cout << "Game over!" << std::endl;
+			}
+		}
+	}
 }
 
 void Level::draw(float deltaTime) {
@@ -81,6 +97,7 @@ void Level::keyPressed(sf::Keyboard::Key key) {
 		
 		case sf::Keyboard::R:
 			mBoard->tryAgain();
+			mMinimax->setBoard(*mBoard);
 			break;
 		
 		default:
@@ -88,10 +105,12 @@ void Level::keyPressed(sf::Keyboard::Key key) {
 	}
 	
 	if(didMove) {
-		mBoard->placeRandom();
+		unsigned row, col;
+		Tile tile;
+		mBoard->placeRandom(&row, &col, &tile);
+		mMinimax->placedTile(row, col, tile);
 		mBoard->print();
 		if(mBoard->isGameOver()) {
-			// TODO: Display as text in the game window
 			std::cout << "Game over!" << std::endl;
 		}
 	}
