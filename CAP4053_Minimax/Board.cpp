@@ -316,18 +316,25 @@ void Board::placeTile(Tile tile, unsigned row, unsigned col) {
 }
 
 
-void Board::placeRandom() {
+unsigned Board::findHoles(int* holeShifts) const {
 	// Operate on a local copy of the grid, hopefully in a register
 	uint64_t grid = mCompressedGrid;
 	
 	// Find all of the holes into which a tile can be placed
 	unsigned holeCount = 0;
-	int holeShifts[16];
 	for(int shift = MAKE_SHIFT(0, 0); shift <= MAKE_SHIFT(3, 3); shift = MAKE_RIGHT(shift)) {
 		if(EXTRACT_TILE(grid, shift) == TILE_EMPTY) {
 			holeShifts[holeCount++] = shift;
 		}
 	}
+	
+	return holeCount;
+}
+
+
+void Board::placeRandom() {
+	int holeShifts[16];
+	unsigned holeCount = findHoles(holeShifts);
 	
 	// Generate random tile value (10% chance of spawning a 4)...
 	unsigned tile = 1 << ((rand() % 10 == 0) & 0x1);
@@ -335,8 +342,8 @@ void Board::placeRandom() {
 	// ...and pick which hole to place it in with even distribution.
 	int hole = holeShifts[rand() % holeCount];
 	
-	// Set new tile and store back in this class
-	mCompressedGrid = applyingTile(grid, hole, tile);
+	// Set new tile
+	mCompressedGrid = applyingTile(mCompressedGrid, hole, tile);
 }
 
 
@@ -454,4 +461,85 @@ void Board::print() const {
 	}
 	
 	printf("\n\n");
+}
+
+
+static inline Tile getLargestTile(CompressedGrid grid) {
+	Tile big = TILE_EMPTY;
+	for(int shift = MAKE_SHIFT(0, 0); shift <= MAKE_SHIFT(3, 3); shift = MAKE_RIGHT(shift)) {
+		Tile cur = EXTRACT_TILE(grid, shift);
+		if(cur > big) {
+			big = cur;
+		}
+	}
+	
+	return big;
+}
+
+
+static inline CompressedGrid rotateGrid(CompressedGrid grid) {
+	CompressedGrid ret = GRID_EMPTY;
+	for(int r = 0; r < 4; r++) {
+		for(int c = 0; c < 4; c++) {
+			Tile tile = GET_TILE(grid, r, c);
+			ret = settingTile(ret, c, 4 - r - 1, tile);
+		}
+	}
+	return ret;
+}
+
+
+static inline CompressedGrid mirrorGrid(CompressedGrid grid) {
+	CompressedGrid l = grid & 0xff00ff00ff00ff00;
+	CompressedGrid r = grid & 0x00ff00ff00ff00ff;
+	grid = (r << 8) | (l >> 8);
+	
+	l = grid & 0xf0f0f0f0f0f0f0f0;
+	r = grid & 0x0f0f0f0f0f0f0f0f;
+	grid = (r << 4) | (l >> 4);
+	
+	return grid;
+}
+
+
+static inline void foreachOrientation(CompressedGrid grid, std::function<void(CompressedGrid)> func) {
+	// XXX: Instead of this, it would be faster to come up with a method for deciding on a standard board layout
+	func(grid);
+	func(mirrorGrid(grid));
+	
+	func((grid = rotateGrid(grid)));
+	func(mirrorGrid(grid));
+	
+	func((grid = rotateGrid(grid)));
+	func(mirrorGrid(grid));
+	
+	func((grid = rotateGrid(grid)));
+	func(mirrorGrid(grid));
+}
+
+
+static inline int scoreLayout(CompressedGrid grid) {
+	/*
+	 * Scoring Criteria
+	 *
+	 * 1. Highest tile value on the board
+	 * 2. ?
+	 */
+	return getLargestTile(grid);
+}
+
+
+int Board::estimateScore() const {
+	if(isGameOver()) {
+		return INT_MIN;
+	}
+	
+	int best = INT_MIN;
+	foreachOrientation(mCompressedGrid, [&best](CompressedGrid grid) {
+		int score = scoreLayout(grid);
+		if(score > best) {
+			best = score;
+		}
+	});
+	return best;
 }

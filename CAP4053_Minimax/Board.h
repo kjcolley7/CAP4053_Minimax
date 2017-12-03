@@ -39,6 +39,7 @@ public:
 	Board();
 	
 	void placeTile(Tile tile, unsigned row, unsigned col);
+	unsigned findHoles(int* holeShifts) const;
 	void placeRandom();
 	
 	bool shiftTiles(Direction dir);
