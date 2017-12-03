@@ -21,6 +21,9 @@ public:
 	
 	DrawableBoard(std::shared_ptr<sf::Font> font, std::shared_ptr<TextureAtlas> textures);
 	
+	void placeRandom();
+	void placeRandom(unsigned* pRow, unsigned* pCol, Tile* pTile);
+	
 	void setCenter(sf::Vector2f center);
 	
 	void upPressed();
@@ -31,6 +34,8 @@ public:
 	void tryAgain();
 	
 	void draw(sf::RenderTarget& canvas);
+	
+	bool checkGameOver();
 	
 private:
 	sf::Vector2f getSlotPosition(unsigned row, unsigned col) const;
@@ -45,7 +50,7 @@ private:
 	std::shared_ptr<sf::Font> mFont;
 	sf::Sprite mSprBoard, mSprTile;
 	sf::Text mGameOver;
-	bool mIsGameOver;
+	uint_fast8_t mGameOverFlags;
 };
 
 #endif /* MM_DRAWABLEBOARD_H */

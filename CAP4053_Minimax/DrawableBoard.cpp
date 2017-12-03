@@ -12,6 +12,9 @@
 #include "Engine/helpers.h"
 #include "BoardPrivate.h"
 
+#define GAME_OVER  (1 << 0)
+#define GAME_DIRTY (1 << 1)
+
 
 const float DrawableBoard::kBoardWidth = 500.0f;
 const float DrawableBoard::kDividerWidth = 15.0f;
@@ -77,7 +80,7 @@ const unsigned DrawableBoard::kTileFontSizes[16] = {
 
 
 DrawableBoard::DrawableBoard(std::shared_ptr<sf::Font> font, std::shared_ptr<TextureAtlas> textures)
-: mFont(font), mBounds(0, 0, kBoardWidth, kBoardWidth), mIsGameOver(false) {
+: mFont(font), mBounds(0, 0, kBoardWidth, kBoardWidth), mGameOverFlags(0) {
 	if(!textures->getSprite("Board", mSprBoard) ||
 	   !textures->getSprite("Tile", mSprTile)
 	) {
@@ -108,6 +111,18 @@ DrawableBoard::DrawableBoard(std::shared_ptr<sf::Font> font, std::shared_ptr<Tex
 }
 
 
+void DrawableBoard::placeRandom() {
+	mGameOverFlags |= GAME_DIRTY;
+	Board::placeRandom();
+}
+
+
+void DrawableBoard::placeRandom(unsigned* pRow, unsigned* pCol, Tile* pTile) {
+	mGameOverFlags |= GAME_DIRTY;
+	Board::placeRandom(pRow, pCol, pTile);
+}
+
+
 void DrawableBoard::setCenter(sf::Vector2f center) {
 	mBounds.left = center.x - mBounds.width / 2.0f;
 	mBounds.top = center.y - mBounds.height / 2.0f;
@@ -118,10 +133,6 @@ void DrawableBoard::setCenter(sf::Vector2f center) {
 
 void DrawableBoard::upPressed() {
 	if(shiftTilesUp()) {
-		if(isGameOver()) {
-			mIsGameOver = true;
-		}
-		
 		// TODO: animate
 	}
 }
@@ -129,10 +140,6 @@ void DrawableBoard::upPressed() {
 
 void DrawableBoard::downPressed() {
 	if(shiftTilesDown()) {
-		if(isGameOver()) {
-			mIsGameOver = true;
-		}
-		
 		// TODO: animate
 	}
 }
@@ -140,10 +147,6 @@ void DrawableBoard::downPressed() {
 
 void DrawableBoard::leftPressed() {
 	if(shiftTilesLeft()) {
-		if(isGameOver()) {
-			mIsGameOver = true;
-		}
-		
 		// TODO: animate
 	}
 }
@@ -151,10 +154,6 @@ void DrawableBoard::leftPressed() {
 
 void DrawableBoard::rightPressed() {
 	if(shiftTilesRight()) {
-		if(isGameOver()) {
-			mIsGameOver = true;
-		}
-		
 		// TODO: animate
 	}
 }
@@ -169,7 +168,7 @@ sf::Vector2f DrawableBoard::getSlotPosition(unsigned row, unsigned col) const {
 
 
 void DrawableBoard::tryAgain() {
-	mIsGameOver = false;
+	mGameOverFlags = 0;
 	mCompressedGrid = GRID_EMPTY;
 	placeRandom();
 	placeRandom();
@@ -206,8 +205,8 @@ void DrawableBoard::draw(sf::RenderTarget& canvas) {
 		}
 	}
 	
-	// isGameOver() is expensive, so cache the result
-	if(mIsGameOver || (mIsGameOver = isGameOver())) {
+	// isGameOver() is expensive, so cache the result using checkGameOver()
+	if(checkGameOver()) {
 		// Draw game over overlay
 		mSprBoard.setColor({238, 228, 218, 186});
 		canvas.draw(mSprBoard);
@@ -216,4 +215,14 @@ void DrawableBoard::draw(sf::RenderTarget& canvas) {
 		// Draw game over message
 		canvas.draw(mGameOver);
 	}
+}
+
+
+bool DrawableBoard::checkGameOver() {
+	if(mGameOverFlags & GAME_DIRTY) {
+		mGameOverFlags &= ~GAME_OVER;
+		mGameOverFlags |= isGameOver();
+	}
+	
+	return mGameOverFlags & GAME_OVER;
 }

@@ -7,76 +7,66 @@
 //
 
 #include "BoardTree.h"
+#include <iostream>
 
-Board Node::getBoard() {
-	return mBoard;
-}
-void BoardTree::populateTree() {
-	unsigned depth = 0;
-	Node* currNode = mHead;
-	while(depth < kMaximumDepth) {
-		if(mIsComputerTurn) {
-			PlaceNode* shift = (PlaceNode*)currNode;
-			mIsComputerTurn = false;
-			ShiftNode* children[4];
-			shift->getChildren(children);
-			for(ShiftNode* node : children) {
-				node->populateChildren();
-			}
-		}
-		else {
-			mIsComputerTurn = true;
-		}
-		depth++;
-	}
-}
-BoardTree::BoardTree(Board initBoard) :
-mHead(new PlaceNode(initBoard)) {
-	mHead->populateChildren();
+
+const unsigned BoardTree::kMaximumDepth = 3;
+
+
+BoardTree::BoardTree(Board initBoard)
+: mHead(new ShiftNode(initBoard)), mBestMove(Direction::UP) { }
+
+
+
+void BoardTree::setBoard(Board newBoard) {
+	mHead->setBoard(newBoard);
 }
 
-PlaceNode* BoardTree::getHead() {
-	return mHead;
+
+bool BoardTree::isValid() const {
+	return mHead != nullptr;
 }
 
-ShiftNode::ShiftNode(Board initBoard) : mBoard(initBoard)
-{}
 
-void ShiftNode::getChildren(PlaceNode* children[16][2]) {
-	for(int i = 0; i < 2; i++)
-		for(int j = 0; j < 16; j++)
-			children[j][i] = mChildren[j][i];
-}
-
-PlaceNode* ShiftNode::getChild(unsigned position, bool isTwo) {
-	return mChildren[position][isTwo];
-}
-
-PlaceNode::PlaceNode(Board initBoard) : mBoard(initBoard)
-{}
-
-void PlaceNode::getChildren(ShiftNode* children[4]) {
-	children[0] = mUpChild;
-	children[1] = mDownChild;
-	children[2] = mLeftChild;
-	children[3] = mRightChild;
-}
-
-ShiftNode* PlaceNode::getChild(Direction dir) {
-	switch (dir) {
+Direction BoardTree::getBestMove() {
+	int score = mHead->getMaxScore(kMaximumDepth, &mBestMove);
+	char cDir;
+	switch(mBestMove) {
 		case Direction::UP:
-			return mUpChild;
+			cDir = 'U';
 			break;
+		
 		case Direction::DOWN:
-			return mDownChild;
+			cDir = 'D';
 			break;
+		
 		case Direction::LEFT:
-			return mLeftChild;
+			cDir = 'L';
 			break;
+		
 		case Direction::RIGHT:
-			return mRightChild;
-			break;
-		default:
+			cDir = 'R';
 			break;
 	}
+	
+	std::cerr << "Picking direction " << cDir << " with score " << score << std::endl;
+	return mBestMove;
+}
+
+
+void BoardTree::placedTile(unsigned row, unsigned col, Tile tile) {
+	PlaceNode* firstMove = mHead->getChild(mBestMove);
+	if(firstMove) {
+		updateHead(firstMove->getChild(row, col, tile));
+	}
+	else {
+		updateHead(nullptr);
+	}
+}
+
+
+void BoardTree::updateHead(ShiftNode* newHead) {
+	mHead->prune(newHead);
+	delete mHead;
+	mHead = newHead;
 }

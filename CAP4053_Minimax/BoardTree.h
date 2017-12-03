@@ -6,68 +6,33 @@
 //  Copyright © 2017 kTeam. All rights reserved.
 //
 
-#ifndef BoardTree_h
-#define BoardTree_h
+#ifndef MM_BOARDTREE_H
+#define MM_BOARDTREE_H
 
-#include <stdio.h>
 #include <memory>
+#include <cstdio>
 #include "Board.h"
 #include "Direction.h"
-
-class PlaceNode;
-class ShiftNode;
+#include "ShiftNode.h"
+#include "PlaceNode.h"
 
 class BoardTree {
 public:
 	BoardTree(Board initBoard);
+	
+	void setBoard(Board newBoard);
+	bool isValid() const;
 	void populateTree();
-	PlaceNode* getHead();
+	Direction getBestMove();
+	void placedTile(unsigned row, unsigned col, Tile tile);
 
 private:
-	PlaceNode* mHead;
-	unsigned kMaximumDepth = 5;
-	bool mIsComputerTurn;
+	void updateHead(ShiftNode* newHead);
+	
+	static const unsigned kMaximumDepth;
+	
+	ShiftNode* mHead;
+	Direction mBestMove;
 };
 
-// Generic node class to allow easier traversal through the tree
-class Node {
-public:
-	virtual Board getBoard() = 0;
-private:
-	Board mBoard;
-};
-
-// This represents a maximizing node
-class ShiftNode : public Node {
-public:
-	ShiftNode(Board initBoard);
-
-	virtual Board getBoard() override;
-	virtual void getChildren(PlaceNode* children[16][2]);
-	virtual PlaceNode* getChild(unsigned position, bool isTwo);
-	void populateChildren();
-
-private:
-	PlaceNode* mChildren[16][2];
-	Board mBoard;
-};
-
-// This represents a minimizing node
-class PlaceNode : public Node {
-public:
-	PlaceNode(Board initBoard);
-
-	Board getBoard();
-	virtual void getChildren(ShiftNode* children[4]);
-	virtual ShiftNode* getChild(Direction dir);
-	void populateChildren();
-
-private:
-	ShiftNode* mUpChild;
-	ShiftNode* mDownChild;
-	ShiftNode* mLeftChild;
-	ShiftNode* mRightChild;
-	Board mBoard;
-};
-
-#endif /* BoardTree_h */
+#endif /* MM_BOARDTREE_H */
